@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ContactChannel {
+  WHATSAPP
+  WECHAT
+  EMAIL
+  TELEGRAM
+  OTHER
+}
+
+enum ProductStatus {
+  TESTING
+  ACTIVE
+  WINNER
+  PAUSED
+  CLOSED
+}
+
+enum OrderStatus {
+  PAID
+  WAITING_SUPPLIER_PURCHASE
+  PURCHASED_FROM_SUPPLIER
+  SHIPPED
+  DELIVERED
+  DELAYED
+  ISSUE
+  REFUNDED
+  CANCELED
+}
+
+enum FinancialEntryType {
+  INCOME
+  EXPENSE
+  REFUND
+}
+
+enum FinancialCategory {
+  ORDER_REVENUE
+  PRODUCT_COST
+  SHIPPING_COST
+  PLATFORM_FEE
+  AD_SPEND
+  REFUND
+  OPERATING_EXPENSE
+  OTHER
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id               String           @id @default(cuid()) @db.VarChar(191)
+  name             String
+  email            String           @unique
+  passwordHash     String           @map("password_hash")
+  suppliers        Supplier[]
+  products         Product[]
+  orders           Order[]
+  financialEntries FinancialEntry[]
+  tasks            Task[]
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Supplier {
+  id               String          @id @default(cuid()) @db.VarChar(191)
+  userId           String          @map("user_id") @db.VarChar(191)
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  contactName      String?         @map("contact_name")
+  contactChannel   ContactChannel? @map("contact_channel")
+  region           String?
+  avgShippingDays  Int?            @map("avg_shipping_days")
+  reliabilityScore Decimal?        @map("reliability_score") @db.Decimal(3, 2)
+  issueRate        Decimal?        @map("issue_rate") @db.Decimal(5, 2)
+  notes            String?         @db.Text
+  products         Product[]
+  orders           Order[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([userId, name])
+  @@map("suppliers")
+}
+
+model Product {
+  id              String        @id @default(cuid()) @db.VarChar(191)
+  userId          String        @map("user_id") @db.VarChar(191)
+  supplierId      String        @map("supplier_id") @db.VarChar(191)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplier        Supplier      @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  name            String
+  sku             String
+  category        String?
+  storeLink       String?       @map("store_link")
+  supplierLink    String?       @map("supplier_link")
+  costPrice       Decimal       @map("cost_price") @db.Decimal(10, 2)
+  shippingCost    Decimal       @map("shipping_cost") @db.Decimal(10, 2)
+  salePrice       Decimal       @map("sale_price") @db.Decimal(10, 2)
+  estimatedMargin Decimal       @map("estimated_margin") @db.Decimal(10, 2)
+  status          ProductStatus
+  notes           String?       @db.Text
+  orders          Order[]
+  tasks           Task[]
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@unique([userId, sku])
+  @@index([userId, status])
+  @@index([supplierId])
+  @@map("products")
+}
+
+model Order {
+  id                    String           @id @default(cuid()) @db.VarChar(191)
+  userId                String           @map("user_id") @db.VarChar(191)
+  productId             String           @map("product_id") @db.VarChar(191)
+  supplierId            String           @map("supplier_id") @db.VarChar(191)
+  user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product               Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  supplier              Supplier         @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  orderNumber           String           @map("order_number")
+  customerName          String           @map("customer_name")
+  customerEmail         String?          @map("customer_email")
+  saleAmount            Decimal          @map("sale_amount") @db.Decimal(10, 2)
+  totalCost             Decimal          @map("total_cost") @db.Decimal(10, 2)
+  status                OrderStatus
+  trackingCode          String?          @map("tracking_code")
+  purchaseDate          DateTime         @map("purchase_date")
+  estimatedDeliveryDate DateTime?        @map("estimated_delivery_date")
+  deliveredDate         DateTime?        @map("delivered_date")
+  notes                 String?          @db.Text
+  financialEntries      FinancialEntry[]
+  tasks                 Task[]
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  @@unique([userId, orderNumber])
+  @@index([userId, status])
+  @@index([productId])
+  @@index([supplierId])
+  @@map("orders")
+}
+
+model FinancialEntry {
+  id            String             @id @default(cuid()) @db.VarChar(191)
+  userId        String             @map("user_id") @db.VarChar(191)
+  orderId       String?            @map("order_id") @db.VarChar(191)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order         Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  type          FinancialEntryType
+  category      FinancialCategory
+  amount        Decimal            @db.Decimal(10, 2)
+  referenceDate DateTime           @map("reference_date")
+  description   String?            @db.Text
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@index([userId, type, referenceDate])
+  @@index([orderId])
+  @@map("financial_entries")
+}
+
+model Task {
+  id               String       @id @default(cuid()) @db.VarChar(191)
+  userId           String       @map("user_id") @db.VarChar(191)
+  relatedOrderId   String?      @map("related_order_id") @db.VarChar(191)
+  relatedProductId String?      @map("related_product_id") @db.VarChar(191)
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relatedOrder     Order?       @relation(fields: [relatedOrderId], references: [id], onDelete: SetNull)
+  relatedProduct   Product?     @relation(fields: [relatedProductId], references: [id], onDelete: SetNull)
+  title            String
+  description      String?      @db.Text
+  priority         TaskPriority
+  status           TaskStatus
+  assigneeName     String?      @map("assignee_name")
+  dueDate          DateTime?    @map("due_date")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  @@index([userId, status, dueDate])
+  @@index([relatedOrderId])
+  @@index([relatedProductId])
+  @@map("tasks")
+}
