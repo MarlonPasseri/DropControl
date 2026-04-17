@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ReactNode } from "react";
 
 type Accent = "teal" | "amber" | "blue" | "rose" | "slate";
@@ -185,6 +186,133 @@ export function NoticeBanner({
       }`}
     >
       {text}
+    </div>
+  );
+}
+
+export function ResultSummary({
+  label,
+  startIndex,
+  endIndex,
+  totalItems,
+}: {
+  label: string;
+  startIndex: number;
+  endIndex: number;
+  totalItems: number;
+}) {
+  return (
+    <p className="text-sm text-slate-500">
+      {totalItems === 0
+        ? `Nenhum ${label} encontrado.`
+        : `Mostrando ${startIndex}-${endIndex} de ${totalItems} ${label}.`}
+    </p>
+  );
+}
+
+export function PaginationControls({
+  page,
+  totalPages,
+  buildHref,
+}: {
+  page: number;
+  totalPages: number;
+  buildHref: (page: number) => string;
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-sm text-slate-500">
+        Pagina {page} de {totalPages}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href={buildHref(Math.max(page - 1, 1))}
+          aria-disabled={page === 1}
+          className={`rounded-md border px-3 py-2 text-sm font-medium ${
+            page === 1
+              ? "pointer-events-none border-slate-200 bg-slate-100 text-slate-400"
+              : "border-slate-200 bg-white text-slate-700"
+          }`}
+        >
+          Anterior
+        </Link>
+        <Link
+          href={buildHref(Math.min(page + 1, totalPages))}
+          aria-disabled={page === totalPages}
+          className={`rounded-md border px-3 py-2 text-sm font-medium ${
+            page === totalPages
+              ? "pointer-events-none border-slate-200 bg-slate-100 text-slate-400"
+              : "border-slate-200 bg-white text-slate-700"
+          }`}
+        >
+          Proxima
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export function AlertCard({
+  title,
+  description,
+  category,
+  severity,
+  href,
+  actionLabel,
+}: {
+  title: string;
+  description: string;
+  category: string;
+  severity: "high" | "medium" | "low";
+  href: string;
+  actionLabel: string;
+}) {
+  const toneClass =
+    severity === "high"
+      ? "border-rose-200 bg-rose-50"
+      : severity === "medium"
+        ? "border-amber-200 bg-amber-50"
+        : "border-blue-200 bg-blue-50";
+
+  const severityLabel =
+    severity === "high" ? "Alta" : severity === "medium" ? "Media" : "Baixa";
+  const categoryLabel =
+    category === "orders"
+      ? "Pedidos"
+      : category === "products"
+        ? "Produtos"
+        : category === "suppliers"
+          ? "Fornecedores"
+          : category === "tasks"
+            ? "Tarefas"
+            : category === "finance"
+              ? "Financeiro"
+              : category;
+
+  return (
+    <div className={`rounded-lg border p-4 ${toneClass}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-md bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-700">
+          {categoryLabel}
+        </span>
+        <span className="rounded-md bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white">
+          Prioridade {severityLabel}
+        </span>
+      </div>
+      <h3 className="mt-3 text-sm font-semibold text-slate-950">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-700">{description}</p>
+      <div className="mt-4">
+        <Link
+          href={href}
+          className="text-sm font-semibold text-slate-950 transition hover:text-slate-700"
+        >
+          {actionLabel}
+        </Link>
+      </div>
     </div>
   );
 }

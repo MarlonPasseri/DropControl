@@ -6,6 +6,8 @@ import {
   EmptyHint,
   MetricCard,
   NoticeBanner,
+  PaginationControls,
+  ResultSummary,
   StatusPill,
 } from "@/components/mvp-ui";
 import {
@@ -18,6 +20,7 @@ import {
   contactChannelOptions,
   getContactChannelLabel,
 } from "@/lib/options";
+import { parsePageParam, paginateItems } from "@/lib/pagination";
 import { requireUser } from "@/lib/require-user";
 
 type PageProps = {
@@ -61,6 +64,8 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
   const editId = firstOf(params.edit);
   const successMessage = firstOf(params.success);
   const errorMessage = firstOf(params.error);
+  const pageParam = firstOf(params.page);
+  const page = parsePageParam(pageParam);
 
   const [metrics, suppliers, selectedSupplier] = await Promise.all([
     getSupplierMetrics(user.id),
@@ -69,6 +74,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
     }),
     editId ? getSupplierById(user.id, editId) : Promise.resolve(null),
   ]);
+  const paginatedSuppliers = paginateItems(suppliers, page, 6);
 
   const supplierMetrics = [
     {
@@ -156,7 +162,13 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
             <EmptyHint text="Nenhum fornecedor encontrado. Crie o primeiro para comecar o cadastro dos produtos." />
           ) : (
             <div className="space-y-4">
-              {suppliers.map((supplier) => (
+              <ResultSummary
+                label="fornecedores"
+                startIndex={paginatedSuppliers.startIndex}
+                endIndex={paginatedSuppliers.endIndex}
+                totalItems={paginatedSuppliers.totalItems}
+              />
+              {paginatedSuppliers.items.map((supplier) => (
                 <Link
                   key={supplier.id}
                   href={buildQueryString(params, {
@@ -205,6 +217,17 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                   </p>
                 </Link>
               ))}
+              <PaginationControls
+                page={paginatedSuppliers.page}
+                totalPages={paginatedSuppliers.totalPages}
+                buildHref={(nextPage) =>
+                  buildQueryString(params, {
+                    page: String(nextPage),
+                    success: undefined,
+                    error: undefined,
+                  })
+                }
+              />
             </div>
           )}
         </AppPanel>

@@ -7,11 +7,14 @@ import {
   EmptyHint,
   MetricCard,
   NoticeBanner,
+  PaginationControls,
+  ResultSummary,
   StatusPill,
 } from "@/components/mvp-ui";
 import { getProductsByUser } from "@/lib/data/products";
 import { getTaskById, getTaskMetrics, getTasksByUser } from "@/lib/data/tasks";
 import { formatDateTime, toDateTimeLocalValue } from "@/lib/formatters";
+import { parsePageParam, paginateItems } from "@/lib/pagination";
 import {
   getTaskPriorityLabel,
   taskPriorityOptions,
@@ -62,6 +65,8 @@ export default async function TasksPage({ searchParams }: PageProps) {
   const errorMessage = firstOf(params.error);
   const statusParam = firstOf(params.status);
   const priorityParam = firstOf(params.priority);
+  const pageParam = firstOf(params.page);
+  const page = parsePageParam(pageParam);
   const statusFilter = taskStatusOptions.some((option) => option.value === statusParam)
     ? (statusParam as TaskStatus)
     : undefined;
@@ -81,6 +86,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
     getProductsByUser(user.id),
     editId ? getTaskById(user.id, editId) : Promise.resolve(null),
   ]);
+  const paginatedTasks = paginateItems(tasks, page, 9);
 
   const taskMetrics = [
     {
@@ -164,7 +170,11 @@ export default async function TasksPage({ searchParams }: PageProps) {
 
           <div className="flex flex-wrap gap-2">
             <Link
-              href={buildQueryString(params, { status: undefined, edit: undefined })}
+              href={buildQueryString(params, {
+                status: undefined,
+                edit: undefined,
+                page: undefined,
+              })}
               className={`rounded-md border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
@@ -179,6 +189,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 href={buildQueryString(params, {
                   status: option.value,
                   edit: undefined,
+                  page: undefined,
                 })}
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
@@ -213,9 +224,16 @@ export default async function TasksPage({ searchParams }: PageProps) {
           {tasks.length === 0 ? (
             <EmptyHint text="Nenhuma tarefa encontrada para os filtros atuais." />
           ) : (
-            <div className="grid gap-4 xl:grid-cols-3">
+            <div className="space-y-4">
+              <ResultSummary
+                label="tarefas"
+                startIndex={paginatedTasks.startIndex}
+                endIndex={paginatedTasks.endIndex}
+                totalItems={paginatedTasks.totalItems}
+              />
+              <div className="grid gap-4 xl:grid-cols-3">
               {taskStatusOptions.map((column) => {
-                const columnTasks = tasks.filter((task) => task.status === column.value);
+                const columnTasks = paginatedTasks.items.filter((task) => task.status === column.value);
 
                 return (
                   <div
@@ -265,6 +283,18 @@ export default async function TasksPage({ searchParams }: PageProps) {
                   </div>
                 );
               })}
+              </div>
+              <PaginationControls
+                page={paginatedTasks.page}
+                totalPages={paginatedTasks.totalPages}
+                buildHref={(nextPage) =>
+                  buildQueryString(params, {
+                    page: String(nextPage),
+                    success: undefined,
+                    error: undefined,
+                  })
+                }
+              />
             </div>
           )}
         </AppPanel>

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import {
+  AlertCard,
   AppPanel,
   EmptyHint,
   MetricCard,
   ProgressBar,
   StatusPill,
 } from "@/components/mvp-ui";
+import { getAlertCenterData } from "@/lib/data/alerts";
 import { getDashboardData } from "@/lib/data/orders";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatters";
 import {
@@ -17,9 +19,50 @@ import {
 } from "@/lib/options";
 import { requireUser } from "@/lib/require-user";
 
-export default async function DashboardPage() {
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function firstOf(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function buildQueryString(
+  current: Record<string, string | string[] | undefined>,
+  updates: Record<string, string | undefined>,
+) {
+  const search = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(current)) {
+    const resolvedValue = firstOf(value);
+
+    if (resolvedValue) {
+      search.set(key, resolvedValue);
+    }
+  }
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (!value) {
+      search.delete(key);
+    } else {
+      search.set(key, value);
+    }
+  }
+
+  const query = search.toString();
+  return query ? `/dashboard?${query}` : "/dashboard";
+}
+
+export default async function DashboardPage({ searchParams }: PageProps) {
   const user = await requireUser();
-  const dashboard = await getDashboardData(user.id);
+  const params = (await searchParams) ?? {};
+  const alertFilter = firstOf(params.alert);
+
+  const [dashboard, alertCenter] = await Promise.all([
+    getDashboardData(user.id),
+    getAlertCenterData(user.id),
+  ]);
+
   const hasSalesTrendData = dashboard.salesTrend.some((day) => day.value > 0);
   const maxTrendValue = Math.max(...dashboard.salesTrend.map((day) => day.value), 1);
   const topProductEstimatedProfits = dashboard.topProducts.map((product) => ({
@@ -30,6 +73,14 @@ export default async function DashboardPage() {
     ...topProductEstimatedProfits.map((product) => product.estimatedProfit),
     1,
   );
+  const filteredAlerts = alertCenter.alerts.filter((alert) => {
+    if (!alertFilter) {
+      return true;
+    }
+
+    return alert.severity === alertFilter || alert.category === alertFilter;
+  });
+
   const dashboardMetrics = [
     {
       label: "Faturamento do dia",
@@ -61,6 +112,24 @@ export default async function DashboardPage() {
       note: "Casos que exigem tratativa",
       accent: "rose" as const,
     },
+    {
+      label: "Alertas ativos",
+      value: `${alertCenter.summary.total}`,
+      note: `${alertCenter.summary.high} de alta prioridade`,
+      accent: alertCenter.summary.high > 0 ? ("rose" as const) : ("teal" as const),
+    },
+  ];
+
+  const filterOptions = [
+    { value: undefined, label: "Todos", count: alertCenter.summary.total },
+    { value: "high", label: "Alta", count: alertCenter.summary.high },
+    { value: "medium", label: "Media", count: alertCenter.summary.medium },
+    { value: "low", label: "Baixa", count: alertCenter.summary.low },
+    { value: "orders", label: "Pedidos", count: alertCenter.summary.orders },
+    { value: "products", label: "Produtos", count: alertCenter.summary.products },
+    { value: "suppliers", label: "Fornecedores", count: alertCenter.summary.suppliers },
+    { value: "tasks", label: "Tarefas", count: alertCenter.summary.tasks },
+    { value: "finance", label: "Financeiro", count: alertCenter.summary.finance },
   ];
 
   return (
@@ -68,13 +137,13 @@ export default async function DashboardPage() {
       title="Dashboard"
       description="Visao rapida da operacao: receita, lucro, pedidos sensiveis, tarefas do dia e alertas que pedem resposta imediata."
     >
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         {dashboardMetrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} />
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <AppPanel title="Vendas por periodo" eyebrow="Visao comercial">
           {!hasSalesTrendData ? (
             <EmptyHint text="Ainda nao ha vendas suficientes para montar a curva da semana." />
@@ -103,12 +172,81 @@ export default async function DashboardPage() {
           )}
         </AppPanel>
 
+        <AppPanel title="Centro de alertas" eyebrow="Motor do MVP">
+          <div className="grid gap-3 sm:grid-cols-4">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">
+                Alta
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{alertCenter.summary.high}</p>
+            </div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+                Media
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
+                {alertCenter.summary.medium}
+              </p>
+            </div>
+            <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                Baixa
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{alertCenter.summary.low}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                Total
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
+                {alertCenter.summary.total}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {filterOptions.map((option) => (
+              <Link
+                key={option.label}
+                href={buildQueryString(params, { alert: option.value })}
+                className={`rounded-md border px-3 py-2 text-sm font-medium ${
+                  alertFilter === option.value || (!alertFilter && !option.value)
+                    ? "border-slate-950 bg-slate-950 text-white"
+                    : "border-slate-200 bg-white text-slate-700"
+                }`}
+              >
+                {option.label} ({option.count})
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {filteredAlerts.length === 0 ? (
+              <EmptyHint text="Nenhum alerta ativo para esse filtro." />
+            ) : (
+              filteredAlerts.slice(0, 8).map((alert) => (
+                <AlertCard
+                  key={alert.id}
+                  title={alert.title}
+                  description={alert.description}
+                  category={alert.category}
+                  severity={alert.severity}
+                  href={alert.href}
+                  actionLabel={alert.actionLabel}
+                />
+              ))
+            )}
+          </div>
+        </AppPanel>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <AppPanel title="Pedidos criticos" eyebrow="Acompanhar agora">
           {dashboard.criticalOrders.length === 0 ? (
             <EmptyHint text="Nenhum pedido em atraso ou problema no momento." />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-[680px] divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50 text-left text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Pedido</th>
@@ -144,6 +282,33 @@ export default async function DashboardPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </AppPanel>
+
+        <AppPanel title="Tarefas do dia" eyebrow="Execucao operacional">
+          {dashboard.tasksToday.length === 0 ? (
+            <EmptyHint text="Nenhuma tarefa aberta com prazo para hoje." />
+          ) : (
+            <div className="space-y-3">
+              {dashboard.tasksToday.map((task) => (
+                <div key={task.id} className="rounded-lg border border-slate-200 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold text-slate-950">{task.title}</h3>
+                    <StatusPill label={getTaskPriorityLabel(task.priority)} />
+                    <StatusPill label={getTaskStatusLabel(task.status)} />
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {task.description || "Sem descricao detalhada."}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-slate-500">
+                    <span>{formatDateTime(task.dueDate)}</span>
+                    <span>{task.assigneeName || "Sem responsavel"}</span>
+                    {task.relatedOrder ? <span>Pedido {task.relatedOrder.orderNumber}</span> : null}
+                    {task.relatedProduct ? <span>Produto {task.relatedProduct.name}</span> : null}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </AppPanel>
@@ -184,54 +349,6 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </AppPanel>
-
-        <AppPanel title="Tarefas do dia" eyebrow="Execucao operacional">
-          {dashboard.tasksToday.length === 0 ? (
-            <EmptyHint text="Nenhuma tarefa aberta com prazo para hoje." />
-          ) : (
-            <div className="space-y-3">
-              {dashboard.tasksToday.map((task) => (
-                <div key={task.id} className="rounded-lg border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-slate-950">{task.title}</h3>
-                    <StatusPill label={getTaskPriorityLabel(task.priority)} />
-                    <StatusPill label={getTaskStatusLabel(task.status)} />
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {task.description || "Sem descricao detalhada."}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-slate-500">
-                    <span>{formatDateTime(task.dueDate)}</span>
-                    <span>{task.assigneeName || "Sem responsavel"}</span>
-                    {task.relatedOrder ? (
-                      <span>Pedido {task.relatedOrder.orderNumber}</span>
-                    ) : null}
-                    {task.relatedProduct ? <span>Produto {task.relatedProduct.name}</span> : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </AppPanel>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <AppPanel title="Alertas recentes" eyebrow="Motor de regras">
-          {dashboard.alerts.length === 0 ? (
-            <EmptyHint text="Nenhum alerta ativo agora. O painel segue de olho nos desvios operacionais." />
-          ) : (
-            <div className="space-y-3">
-              {dashboard.alerts.map((alert) => (
-                <div
-                  key={alert}
-                  className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900"
-                >
-                  {alert}
                 </div>
               ))}
             </div>

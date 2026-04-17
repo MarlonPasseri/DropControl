@@ -7,6 +7,8 @@ import {
   EmptyHint,
   MetricCard,
   NoticeBanner,
+  PaginationControls,
+  ResultSummary,
   StatusPill,
 } from "@/components/mvp-ui";
 import { formatCurrency } from "@/lib/formatters";
@@ -15,6 +17,7 @@ import {
   getProductMetrics,
   getProductsByUser,
 } from "@/lib/data/products";
+import { parsePageParam, paginateItems } from "@/lib/pagination";
 import { getSupplierOptions } from "@/lib/data/suppliers";
 import {
   getProductStatusLabel,
@@ -64,6 +67,8 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   const successMessage = firstOf(params.success);
   const errorMessage = firstOf(params.error);
   const statusParam = firstOf(params.status);
+  const pageParam = firstOf(params.page);
+  const page = parsePageParam(pageParam);
   const statusFilter = productStatusOptions.some((option) => option.value === statusParam)
     ? (statusParam as ProductStatus)
     : undefined;
@@ -77,6 +82,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     getSupplierOptions(user.id),
     editId ? getProductById(user.id, editId) : Promise.resolve(null),
   ]);
+  const paginatedProducts = paginateItems(products, page);
 
   const productMetrics = [
     {
@@ -148,7 +154,11 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
           <div className="flex flex-wrap gap-2">
             <Link
-              href={buildQueryString(params, { status: undefined, edit: undefined })}
+              href={buildQueryString(params, {
+                status: undefined,
+                edit: undefined,
+                page: undefined,
+              })}
               className={`rounded-md border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
@@ -163,6 +173,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 href={buildQueryString(params, {
                   status: option.value,
                   edit: undefined,
+                  page: undefined,
                 })}
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
@@ -183,7 +194,11 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           eyebrow="Tabela principal"
           action={
             <Link
-              href={buildQueryString(params, { edit: undefined, success: undefined, error: undefined })}
+              href={buildQueryString(params, {
+                edit: undefined,
+                success: undefined,
+                error: undefined,
+              })}
               className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white"
             >
               Novo produto
@@ -193,8 +208,15 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           {products.length === 0 ? (
             <EmptyHint text="Nenhum produto encontrado. Crie o primeiro cadastro para alimentar pedidos e tarefas." />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <div className="space-y-4">
+              <ResultSummary
+                label="produtos"
+                startIndex={paginatedProducts.startIndex}
+                endIndex={paginatedProducts.endIndex}
+                totalItems={paginatedProducts.totalItems}
+              />
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-[760px] divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50 text-left text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Produto</th>
@@ -205,7 +227,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
-                  {products.map((product) => (
+                  {paginatedProducts.items.map((product) => (
                     <tr key={product.id}>
                       <td className="px-4 py-4 align-top">
                         <Link
@@ -237,6 +259,18 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                   ))}
                 </tbody>
               </table>
+            </div>
+              <PaginationControls
+                page={paginatedProducts.page}
+                totalPages={paginatedProducts.totalPages}
+                buildHref={(nextPage) =>
+                  buildQueryString(params, {
+                    page: String(nextPage),
+                    success: undefined,
+                    error: undefined,
+                  })
+                }
+              />
             </div>
           )}
         </AppPanel>

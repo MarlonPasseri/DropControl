@@ -11,6 +11,8 @@ import {
   EmptyHint,
   MetricCard,
   NoticeBanner,
+  PaginationControls,
+  ResultSummary,
   StatusPill,
 } from "@/components/mvp-ui";
 import {
@@ -21,6 +23,7 @@ import {
 import { getProductsByUser } from "@/lib/data/products";
 import { getSupplierOptions } from "@/lib/data/suppliers";
 import { formatCurrency, formatDate, toDateTimeLocalValue } from "@/lib/formatters";
+import { parsePageParam, paginateItems } from "@/lib/pagination";
 import { getOrderStatusLabel, orderStatusOptions } from "@/lib/options";
 import { requireUser } from "@/lib/require-user";
 
@@ -86,6 +89,8 @@ export default async function OrdersPage({ searchParams }: PageProps) {
   const statusParam = firstOf(params.status);
   const fromParam = firstOf(params.from);
   const toParam = firstOf(params.to);
+  const pageParam = firstOf(params.page);
+  const page = parsePageParam(pageParam);
   const fromDate = parseDateInput(fromParam);
   const toDate = parseDateInput(toParam, true);
   const statusFilter = orderStatusOptions.some((option) => option.value === statusParam)
@@ -104,6 +109,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
     getSupplierOptions(user.id),
     editId ? getOrderById(user.id, editId) : Promise.resolve(null),
   ]);
+  const paginatedOrders = paginateItems(orders, page);
 
   const orderMetrics = [
     {
@@ -190,7 +196,11 @@ export default async function OrdersPage({ searchParams }: PageProps) {
 
           <div className="flex flex-wrap gap-2">
             <Link
-              href={buildQueryString(params, { status: undefined, edit: undefined })}
+              href={buildQueryString(params, {
+                status: undefined,
+                edit: undefined,
+                page: undefined,
+              })}
               className={`rounded-md border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
@@ -205,6 +215,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 href={buildQueryString(params, {
                   status: option.value,
                   edit: undefined,
+                  page: undefined,
                 })}
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
@@ -239,8 +250,15 @@ export default async function OrdersPage({ searchParams }: PageProps) {
           {orders.length === 0 ? (
             <EmptyHint text="Nenhum pedido encontrado. Cadastre produtos e fornecedores para abrir o fluxo operacional." />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <div className="space-y-4">
+              <ResultSummary
+                label="pedidos"
+                startIndex={paginatedOrders.startIndex}
+                endIndex={paginatedOrders.endIndex}
+                totalItems={paginatedOrders.totalItems}
+              />
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-[980px] divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50 text-left text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Pedido</th>
@@ -252,7 +270,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
-                  {orders.map((order) => (
+                  {paginatedOrders.items.map((order) => (
                     <tr key={order.id}>
                       <td className="px-4 py-4 align-top">
                         <Link
@@ -315,6 +333,18 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                   ))}
                 </tbody>
               </table>
+            </div>
+              <PaginationControls
+                page={paginatedOrders.page}
+                totalPages={paginatedOrders.totalPages}
+                buildHref={(nextPage) =>
+                  buildQueryString(params, {
+                    page: String(nextPage),
+                    success: undefined,
+                    error: undefined,
+                  })
+                }
+              />
             </div>
           )}
         </AppPanel>

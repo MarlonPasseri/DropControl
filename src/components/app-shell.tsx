@@ -67,7 +67,7 @@ export async function AppShell({
               </div>
               <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="font-medium text-slate-700">Sprint atual</p>
-                <p className="mt-1 text-slate-500">Base + autenticacao</p>
+                <p className="mt-1 text-slate-500">Fase 5 - alertas e refinamento</p>
               </div>
             </div>
           </header>

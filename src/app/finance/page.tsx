@@ -10,7 +10,9 @@ import {
   EmptyHint,
   MetricCard,
   NoticeBanner,
+  PaginationControls,
   ProgressBar,
+  ResultSummary,
   StatusPill,
 } from "@/components/mvp-ui";
 import {
@@ -26,6 +28,7 @@ import {
   formatPercent,
   toDateTimeLocalValue,
 } from "@/lib/formatters";
+import { parsePageParam, paginateItems } from "@/lib/pagination";
 import {
   financialCategoryOptions,
   financialEntryTypeOptions,
@@ -97,6 +100,8 @@ export default async function FinancePage({ searchParams }: PageProps) {
   const typeParam = firstOf(params.type);
   const fromParam = firstOf(params.from);
   const toParam = firstOf(params.to);
+  const pageParam = firstOf(params.page);
+  const page = parsePageParam(pageParam);
   const fromDate = parseDateInput(fromParam);
   const toDate = parseDateInput(toParam, true);
   const typeFilter = financialEntryTypeOptions.some((option) => option.value === typeParam)
@@ -115,6 +120,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
     getOrderOptions(user.id),
     editId ? getFinancialEntryById(user.id, editId) : Promise.resolve(null),
   ]);
+  const paginatedEntries = paginateItems(entries, page);
 
   const financeMetrics = [
     {
@@ -238,8 +244,15 @@ export default async function FinancePage({ searchParams }: PageProps) {
           {entries.length === 0 ? (
             <EmptyHint text="Nenhum lancamento encontrado para os filtros atuais." />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <div className="space-y-4">
+              <ResultSummary
+                label="lancamentos"
+                startIndex={paginatedEntries.startIndex}
+                endIndex={paginatedEntries.endIndex}
+                totalItems={paginatedEntries.totalItems}
+              />
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-[860px] divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50 text-left text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Data</th>
@@ -250,7 +263,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
-                  {entries.map((entry) => (
+                  {paginatedEntries.items.map((entry) => (
                     <tr key={entry.id}>
                       <td className="px-4 py-4 align-top text-slate-600">
                         <p>{formatDateTime(entry.referenceDate)}</p>
@@ -290,6 +303,18 @@ export default async function FinancePage({ searchParams }: PageProps) {
                   ))}
                 </tbody>
               </table>
+            </div>
+              <PaginationControls
+                page={paginatedEntries.page}
+                totalPages={paginatedEntries.totalPages}
+                buildHref={(nextPage) =>
+                  buildQueryString(params, {
+                    page: String(nextPage),
+                    success: undefined,
+                    error: undefined,
+                  })
+                }
+              />
             </div>
           )}
         </AppPanel>
@@ -425,8 +450,8 @@ export default async function FinancePage({ searchParams }: PageProps) {
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <AppPanel title="Resumo mensal" eyebrow="Fechamento">
-          <div className="overflow-hidden rounded-lg border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="min-w-[720px] divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-medium">Mes</th>
@@ -472,8 +497,8 @@ export default async function FinancePage({ searchParams }: PageProps) {
           {analytics.orderProfitability.length === 0 ? (
             <EmptyHint text="Os pedidos vao aparecer aqui assim que a operacao comecar a registrar vendas." />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-[860px] divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50 text-left text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Pedido</th>
@@ -602,8 +627,8 @@ export default async function FinancePage({ searchParams }: PageProps) {
         {analytics.refunds.length === 0 ? (
           <EmptyHint text="Nenhum reembolso registrado ate agora." />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="min-w-[760px] divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-medium">Data</th>
