@@ -13,32 +13,38 @@ export function RegisterForm() {
   return (
     <form action={formAction} className="space-y-4">
       <label className="block">
-        <span className="mb-2 block text-sm font-medium text-slate-700">Nome</span>
+        <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+          Nome
+        </span>
         <input
           type="text"
           name="name"
           required
           autoComplete="name"
           placeholder="Seu nome"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+          className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
         />
       </label>
 
       <label className="block">
-        <span className="mb-2 block text-sm font-medium text-slate-700">E-mail</span>
+        <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+          E-mail
+        </span>
         <input
           type="email"
           name="email"
           required
           autoComplete="email"
           placeholder="voce@empresa.com"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+          className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
         />
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Senha</span>
+          <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+            Senha
+          </span>
           <input
             type="password"
             name="password"
@@ -46,12 +52,12 @@ export function RegisterForm() {
             minLength={8}
             autoComplete="new-password"
             placeholder="Minimo de 8 caracteres"
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+            className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
           />
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">
+          <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
             Confirmar senha
           </span>
           <input
@@ -61,17 +67,17 @@ export function RegisterForm() {
             minLength={8}
             autoComplete="new-password"
             placeholder="Repita a senha"
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+            className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
           />
         </label>
       </div>
 
       {state.status !== "idle" ? (
         <p
-          className={`rounded-lg border px-4 py-3 text-sm ${
+          className={`rounded-lg px-4 py-3 text-sm ${
             state.status === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-              : "border-rose-200 bg-rose-50 text-rose-900"
+              ? "bg-[color:rgba(213,227,252,0.45)] text-[var(--on-secondary-container)]"
+              : "bg-[color:rgba(254,137,131,0.18)] text-[var(--error)]"
           }`}
         >
           {state.message}
@@ -81,7 +87,7 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:border-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+        className="w-full rounded-lg bg-[var(--surface-container-lowest)] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:text-slate-400"
       >
         {isPending ? "Criando conta..." : "Criar conta inicial"}
       </button>

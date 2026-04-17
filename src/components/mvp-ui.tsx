@@ -3,38 +3,83 @@ import { ReactNode } from "react";
 
 type Accent = "teal" | "amber" | "blue" | "rose" | "slate";
 
-const accentMap: Record<Accent, string> = {
-  teal: "border-teal-200 bg-teal-50 text-teal-900",
-  amber: "border-amber-200 bg-amber-50 text-amber-900",
-  blue: "border-blue-200 bg-blue-50 text-blue-900",
-  rose: "border-rose-200 bg-rose-50 text-rose-900",
-  slate: "border-slate-200 bg-slate-100 text-slate-900",
+const accentMap: Record<
+  Accent,
+  {
+    card: string;
+    iconWrap: string;
+    icon: string;
+    eyebrow: string;
+    note: string;
+    value: string;
+  }
+> = {
+  teal: {
+    card: "bg-[var(--surface-container-low)]",
+    iconWrap: "bg-[var(--surface-container-highest)] text-[var(--primary)]",
+    icon: "payments",
+    eyebrow: "text-[var(--on-surface-variant)]",
+    note: "text-[var(--on-surface-variant)]",
+    value: "text-slate-900",
+  },
+  amber: {
+    card: "bg-[var(--surface-container-lowest)]",
+    iconWrap: "bg-[var(--tertiary-container)] text-[var(--on-tertiary-container)]",
+    icon: "analytics",
+    eyebrow: "text-[var(--on-surface-variant)]",
+    note: "text-[var(--on-surface-variant)]",
+    value: "text-slate-900",
+  },
+  blue: {
+    card: "signature-gradient shadow-[0_16px_30px_rgba(86,94,116,0.16)]",
+    iconWrap: "bg-white/15 text-white",
+    icon: "trending_up",
+    eyebrow: "text-[var(--primary-container)]",
+    note: "text-white/80",
+    value: "text-white",
+  },
+  rose: {
+    card: "bg-[color:rgba(254,137,131,0.18)]",
+    iconWrap: "bg-white/70 text-[var(--error)]",
+    icon: "warning",
+    eyebrow: "text-[var(--error)]",
+    note: "text-[var(--on-surface-variant)]",
+    value: "text-slate-900",
+  },
+  slate: {
+    card: "bg-[var(--surface-container-lowest)] shadow-[0_20px_40px_rgba(42,52,57,0.06)]",
+    iconWrap: "bg-[var(--primary-container)] text-[var(--primary)]",
+    icon: "bar_chart",
+    eyebrow: "text-[var(--on-surface-variant)]",
+    note: "text-[var(--on-surface-variant)]",
+    value: "text-slate-900",
+  },
 };
 
 const statusMap: Record<string, string> = {
-  Ativo: "bg-teal-100 text-teal-900",
-  Vencedor: "bg-emerald-100 text-emerald-900",
-  Testando: "bg-blue-100 text-blue-900",
-  Pausado: "bg-amber-100 text-amber-900",
-  Encerrado: "bg-slate-200 text-slate-900",
-  Pago: "bg-blue-100 text-blue-900",
-  "Aguardando compra": "bg-amber-100 text-amber-900",
-  Comprado: "bg-cyan-100 text-cyan-900",
-  Enviado: "bg-teal-100 text-teal-900",
-  Entregue: "bg-emerald-100 text-emerald-900",
-  Atraso: "bg-orange-100 text-orange-900",
-  Problema: "bg-rose-100 text-rose-900",
-  Reembolsado: "bg-slate-200 text-slate-900",
-  Cancelado: "bg-slate-200 text-slate-900",
-  Receita: "bg-emerald-100 text-emerald-900",
-  Despesa: "bg-amber-100 text-amber-900",
-  Reembolso: "bg-rose-100 text-rose-900",
-  Alta: "bg-rose-100 text-rose-900",
-  Media: "bg-amber-100 text-amber-900",
-  Baixa: "bg-blue-100 text-blue-900",
-  Pendente: "bg-amber-100 text-amber-900",
-  "Em andamento": "bg-blue-100 text-blue-900",
-  Concluida: "bg-emerald-100 text-emerald-900",
+  Ativo: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
+  Vencedor: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Testando: "bg-[var(--tertiary-container)] text-[var(--on-tertiary-container)]",
+  Pausado: "bg-[color:rgba(254,137,131,0.18)] text-[var(--error)]",
+  Encerrado: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Pago: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  "Aguardando compra": "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Comprado: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
+  Enviado: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Entregue: "bg-[var(--tertiary-container)] text-[var(--on-tertiary-container)]",
+  Atraso: "bg-[color:rgba(254,137,131,0.18)] text-[var(--error)]",
+  Problema: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
+  Reembolsado: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
+  Cancelado: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Receita: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Despesa: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Reembolso: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
+  Alta: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
+  Media: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Baixa: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
+  Pendente: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  "Em andamento": "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
+  Concluida: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
 };
 
 export function AppPanel({
@@ -49,15 +94,15 @@ export function AppPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+    <section className="rounded-lg bg-[var(--surface-container-lowest)] p-6 shadow-[0_20px_40px_rgba(42,52,57,0.06)]">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           {eyebrow ? (
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)]">
               {eyebrow}
             </p>
           ) : null}
-          <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
+          <h2 className="font-headline text-lg font-bold text-slate-900">{title}</h2>
         </div>
         {action ? <div>{action}</div> : null}
       </div>
@@ -77,11 +122,26 @@ export function MetricCard({
   note: string;
   accent: Accent;
 }) {
+  const theme = accentMap[accent];
+
   return (
-    <div className={`rounded-lg border p-4 ${accentMap[accent]}`}>
-      <p className="text-sm font-medium">{label}</p>
-      <p className="mt-3 text-3xl font-semibold text-slate-950">{value}</p>
-      <p className="mt-2 text-sm text-slate-600">{note}</p>
+    <div className={`flex min-h-[172px] flex-col justify-between rounded-lg p-6 ${theme.card}`}>
+      <div>
+        <div
+          className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${theme.iconWrap}`}
+        >
+          <span className="material-symbols-outlined text-[20px]">{theme.icon}</span>
+        </div>
+        <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${theme.eyebrow}`}>
+          {label}
+        </p>
+      </div>
+      <div>
+        <p className={`font-headline text-3xl font-extrabold tracking-tight ${theme.value}`}>
+          {value}
+        </p>
+        <p className={`mt-2 text-sm ${theme.note}`}>{note}</p>
+      </div>
     </div>
   );
 }
@@ -109,8 +169,8 @@ export function FilterChip({
     <span
       className={`inline-flex rounded-md border px-3 py-2 text-sm font-medium ${
         active
-          ? "border-slate-950 bg-slate-950 text-white"
-          : "border-slate-200 bg-white text-slate-700"
+          ? "border-slate-900 bg-slate-900 text-white"
+          : "border-[var(--surface-container-high)] bg-[var(--surface-container-lowest)] text-[var(--on-surface-variant)]"
       }`}
     >
       {label}
@@ -129,8 +189,10 @@ export function MockField({
 }) {
   return (
     <label className={wide ? "col-span-full" : ""}>
-      <span className="mb-2 block text-sm font-medium text-slate-700">{label}</span>
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
+      <span className="mb-2 block text-sm font-medium text-[var(--on-surface-variant)]">
+        {label}
+      </span>
+      <div className="rounded-lg bg-[var(--surface-container-low)] px-3 py-3 text-sm text-[var(--on-surface-variant)]">
         {value}
       </div>
     </label>
@@ -149,14 +211,11 @@ export function ProgressBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
-        <p className="text-sm font-semibold text-slate-950">{value}</p>
+        <p className="text-sm font-medium text-[var(--on-surface-variant)]">{label}</p>
+        <p className="text-sm font-semibold text-slate-900">{value}</p>
       </div>
-      <div className="h-2 rounded-full bg-slate-100">
-        <div
-          className="h-2 rounded-full bg-slate-950"
-          style={{ width: `${share}%` }}
-        />
+      <div className="h-2 rounded-full bg-[var(--surface-container-highest)]">
+        <div className="h-2 rounded-full bg-[var(--primary)]" style={{ width: `${share}%` }} />
       </div>
     </div>
   );
@@ -164,7 +223,7 @@ export function ProgressBar({
 
 export function EmptyHint({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+    <div className="rounded-lg border border-dashed border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-6 text-sm text-[var(--on-surface-variant)]">
       {text}
     </div>
   );
@@ -179,10 +238,10 @@ export function NoticeBanner({
 }) {
   return (
     <div
-      className={`rounded-lg border px-4 py-3 text-sm ${
+      className={`rounded-lg px-4 py-3 text-sm ${
         tone === "success"
-          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-          : "border-rose-200 bg-rose-50 text-rose-900"
+          ? "bg-[color:rgba(213,227,252,0.45)] text-[var(--on-secondary-container)]"
+          : "bg-[color:rgba(254,137,131,0.18)] text-[var(--error)]"
       }`}
     >
       {text}
@@ -202,7 +261,7 @@ export function ResultSummary({
   totalItems: number;
 }) {
   return (
-    <p className="text-sm text-slate-500">
+    <p className="text-sm text-[var(--on-surface-variant)]">
       {totalItems === 0
         ? `Nenhum ${label} encontrado.`
         : `Mostrando ${startIndex}-${endIndex} de ${totalItems} ${label}.`}
@@ -225,7 +284,7 @@ export function PaginationControls({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-[var(--on-surface-variant)]">
         Pagina {page} de {totalPages}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -234,8 +293,8 @@ export function PaginationControls({
           aria-disabled={page === 1}
           className={`rounded-md border px-3 py-2 text-sm font-medium ${
             page === 1
-              ? "pointer-events-none border-slate-200 bg-slate-100 text-slate-400"
-              : "border-slate-200 bg-white text-slate-700"
+              ? "pointer-events-none border-transparent bg-[var(--surface-container-high)] text-slate-400"
+              : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
           }`}
         >
           Anterior
@@ -245,8 +304,8 @@ export function PaginationControls({
           aria-disabled={page === totalPages}
           className={`rounded-md border px-3 py-2 text-sm font-medium ${
             page === totalPages
-              ? "pointer-events-none border-slate-200 bg-slate-100 text-slate-400"
-              : "border-slate-200 bg-white text-slate-700"
+              ? "pointer-events-none border-transparent bg-[var(--surface-container-high)] text-slate-400"
+              : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
           }`}
         >
           Proxima
@@ -273,10 +332,10 @@ export function AlertCard({
 }) {
   const toneClass =
     severity === "high"
-      ? "border-rose-200 bg-rose-50"
+      ? "bg-[color:rgba(254,137,131,0.18)]"
       : severity === "medium"
-        ? "border-amber-200 bg-amber-50"
-        : "border-blue-200 bg-blue-50";
+        ? "bg-[var(--surface-container-low)]"
+        : "bg-[color:rgba(213,227,252,0.45)]";
 
   const severityLabel =
     severity === "high" ? "Alta" : severity === "medium" ? "Media" : "Baixa";
@@ -294,21 +353,21 @@ export function AlertCard({
               : category;
 
   return (
-    <div className={`rounded-lg border p-4 ${toneClass}`}>
+    <div className={`rounded-lg p-4 ${toneClass}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-white/80 px-2.5 py-1 text-xs font-semibold text-slate-700">
+        <span className="rounded-md bg-white/80 px-2.5 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
           {categoryLabel}
         </span>
-        <span className="rounded-md bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white">
+        <span className="rounded-md bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
           Prioridade {severityLabel}
         </span>
       </div>
-      <h3 className="mt-3 text-sm font-semibold text-slate-950">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-700">{description}</p>
+      <h3 className="mt-3 font-headline text-sm font-bold text-slate-900">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-[var(--on-surface-variant)]">{description}</p>
       <div className="mt-4">
         <Link
           href={href}
-          className="text-sm font-semibold text-slate-950 transition hover:text-slate-700"
+          className="text-sm font-semibold text-[var(--primary)] transition hover:text-[var(--primary-dim)]"
         >
           {actionLabel}
         </Link>

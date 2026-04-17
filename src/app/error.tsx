@@ -15,15 +15,15 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-[#f4f6f3] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl rounded-lg border border-rose-200 bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-600">
+    <div className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl rounded-lg bg-[var(--surface-container-lowest)] p-6 shadow-[0_20px_40px_rgba(42,52,57,0.06)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--error)]">
           Erro inesperado
         </p>
-        <h1 className="mt-3 text-2xl font-semibold text-slate-950">
+        <h1 className="mt-3 font-headline text-2xl font-bold text-slate-900">
           A tela nao conseguiu carregar agora.
         </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
+        <p className="mt-3 text-sm leading-6 text-[var(--on-surface-variant)]">
           Tente recarregar este trecho da aplicacao. Se continuar falhando, volte para o
           dashboard e siga dali.
         </p>
@@ -34,13 +34,13 @@ export default function Error({
           <button
             type="button"
             onClick={() => unstable_retry()}
-            className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+            className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)]"
           >
             Tentar de novo
           </button>
           <Link
             href="/dashboard"
-            className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+            className="rounded-lg bg-[var(--surface-container-low)] px-4 py-3 text-sm font-medium text-[var(--on-secondary-container)]"
           >
             Voltar ao dashboard
           </Link>

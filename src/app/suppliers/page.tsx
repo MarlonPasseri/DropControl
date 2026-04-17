@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { saveSupplier, removeSupplier } from "@/app/suppliers/actions";
 import { AppShell } from "@/components/app-shell";
 import {
@@ -125,11 +125,11 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por nome, contato ou regiao"
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="min-w-0 flex-1 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             <button
               type="submit"
-              className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
             >
               Buscar
             </button>
@@ -149,7 +149,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
               success: undefined,
               error: undefined,
             })}
-            className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white"
+            className="signature-gradient rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.14)]"
           >
             Novo fornecedor
           </Link>
@@ -248,7 +248,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                 name="name"
                 required
                 defaultValue={selectedSupplier?.name ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -258,7 +258,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                 type="text"
                 name="contactName"
                 defaultValue={selectedSupplier?.contactName ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -267,7 +267,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
               <select
                 name="contactChannel"
                 defaultValue={selectedSupplier?.contactChannel ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               >
                 <option value="">Selecione</option>
                 {contactChannelOptions.map((option) => (
@@ -286,7 +286,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                 type="text"
                 name="region"
                 defaultValue={selectedSupplier?.region ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -300,7 +300,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                 min="0"
                 step="1"
                 defaultValue={selectedSupplier?.avgShippingDays ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -315,7 +315,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                 max="5"
                 step="0.1"
                 defaultValue={selectedSupplier?.reliabilityScore?.toString() ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -329,7 +329,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                 min="0"
                 step="0.1"
                 defaultValue={selectedSupplier?.issueRate?.toString() ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -341,14 +341,14 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                 name="notes"
                 rows={4}
                 defaultValue={selectedSupplier?.notes ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
             <div className="col-span-full flex flex-wrap gap-3">
               <button
                 type="submit"
-                className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
               >
                 {selectedSupplier ? "Salvar alteracoes" : "Criar fornecedor"}
               </button>
@@ -381,3 +381,4 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
     </AppShell>
   );
 }
+

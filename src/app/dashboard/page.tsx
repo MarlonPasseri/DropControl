@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import {
   AlertCard,
@@ -212,7 +212,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   alertFilter === option.value || (!alertFilter && !option.value)
                     ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-slate-200 bg-white text-slate-700"
+                    : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
                 }`}
               >
                 {option.label} ({option.count})
@@ -338,11 +338,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                     </p>
                   </div>
                   <div className="space-y-2 text-sm">
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div className="rounded-lg bg-[var(--surface-container-low)] px-3 py-2">
                       <p className="text-slate-500">Pedidos</p>
                       <p className="mt-1 text-lg font-semibold text-slate-950">{product.orders}</p>
                     </div>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div className="rounded-lg bg-[var(--surface-container-low)] px-3 py-2">
                       <p className="text-slate-500">Margem unitaria</p>
                       <p className="mt-1 text-lg font-semibold text-slate-950">
                         {formatCurrency(product.estimatedMargin)}
@@ -375,3 +375,4 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     </AppShell>
   );
 }
+

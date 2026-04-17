@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { OrderStatus } from "@prisma/client";
 import {
   changeOrderStatus,
@@ -163,24 +163,24 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por pedido, cliente, produto ou fornecedor"
-              className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="min-w-0 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             <input
               type="date"
               name="from"
               defaultValue={fromParam ?? ""}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             <input
               type="date"
               name="to"
               defaultValue={toParam ?? ""}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             {statusFilter ? <input type="hidden" name="status" value={statusFilter} /> : null}
             <button
               type="submit"
-              className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
             >
               Filtrar
             </button>
@@ -204,7 +204,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               className={`rounded-md border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-700"
+                  : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
               }`}
             >
               Todos
@@ -220,7 +220,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
                     ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-slate-200 bg-white text-slate-700"
+                    : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
                 }`}
               >
                 {option.label}
@@ -241,7 +241,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 success: undefined,
                 error: undefined,
               })}
-              className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white"
+              className="signature-gradient rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.14)]"
             >
               Novo pedido
             </Link>
@@ -369,7 +369,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="orderNumber"
                     required
                     defaultValue={selectedOrder?.orderNumber ?? ""}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -382,7 +382,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="purchaseDate"
                     required
                     defaultValue={toDateTimeLocalValue(selectedOrder?.purchaseDate)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -395,7 +395,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="customerName"
                     required
                     defaultValue={selectedOrder?.customerName ?? ""}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -407,7 +407,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     type="email"
                     name="customerEmail"
                     defaultValue={selectedOrder?.customerEmail ?? ""}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -417,7 +417,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="productId"
                     required
                     defaultValue={selectedOrder?.productId ?? products[0]?.id}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   >
                     {products.map((product) => (
                       <option key={product.id} value={product.id}>
@@ -435,7 +435,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="supplierId"
                     required
                     defaultValue={selectedOrder?.supplierId ?? suppliers[0]?.id}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   >
                     {suppliers.map((supplier) => (
                       <option key={supplier.id} value={supplier.id}>
@@ -454,7 +454,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     step="0.01"
                     required
                     defaultValue={selectedOrder?.saleAmount.toString() ?? ""}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -467,7 +467,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     step="0.01"
                     required
                     defaultValue={selectedOrder?.totalCost.toString() ?? ""}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -477,7 +477,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="status"
                     required
                     defaultValue={selectedOrder?.status ?? OrderStatus.PAID}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   >
                     {orderStatusOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -495,7 +495,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     type="text"
                     name="trackingCode"
                     defaultValue={selectedOrder?.trackingCode ?? ""}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -507,7 +507,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     type="datetime-local"
                     name="estimatedDeliveryDate"
                     defaultValue={toDateTimeLocalValue(selectedOrder?.estimatedDeliveryDate)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -519,7 +519,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     type="datetime-local"
                     name="deliveredDate"
                     defaultValue={toDateTimeLocalValue(selectedOrder?.deliveredDate)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
@@ -531,14 +531,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="notes"
                     rows={4}
                     defaultValue={selectedOrder?.notes ?? ""}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
                   />
                 </label>
 
                 <div className="col-span-full flex flex-wrap gap-3">
                   <button
                     type="submit"
-                    className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                    className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
                   >
                     {selectedOrder ? "Salvar alteracoes" : "Criar pedido"}
                   </button>
@@ -587,3 +587,4 @@ export default async function OrdersPage({ searchParams }: PageProps) {
     </AppShell>
   );
 }
+

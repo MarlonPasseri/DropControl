@@ -1,15 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f6f3;
-  --foreground: #0f172a;
+  --background: #f7f9fb;
+  --foreground: #2a3439;
+  --surface: #f7f9fb;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f0f4f7;
+  --surface-container: #e8eff3;
+  --surface-container-high: #e1e9ee;
+  --surface-container-highest: #d9e4ea;
+  --surface-variant: #d9e4ea;
+  --outline: #717c82;
+  --outline-variant: #a9b4b9;
+  --primary: #565e74;
+  --primary-dim: #4a5268;
+  --primary-container: #dae2fd;
+  --on-primary: #f7f7ff;
+  --on-primary-container: #4a5167;
+  --secondary: #526074;
+  --secondary-container: #d5e3fc;
+  --on-secondary-container: #455367;
+  --tertiary: #605c78;
+  --tertiary-container: #e3dbfd;
+  --on-tertiary-container: #514d68;
+  --on-surface-variant: #566166;
+  --error: #9f403d;
+  --error-container: #fe8983;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 * {
@@ -24,7 +45,27 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+.font-headline {
+  font-family: "Manrope", Arial, Helvetica, sans-serif;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.signature-gradient {
+  background: linear-gradient(135deg, #565e74 0%, #dae2fd 100%);
 }
 
 a {
@@ -37,4 +78,23 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+::selection {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-container-highest);
+  border-radius: 999px;
 }

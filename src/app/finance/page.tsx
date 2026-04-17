@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { FinancialEntryType } from "@prisma/client";
 import {
   removeFinancialEntry,
@@ -174,12 +174,12 @@ export default async function FinancePage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por descricao, pedido, cliente, produto ou fornecedor"
-              className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="min-w-0 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             <select
               name="type"
               defaultValue={typeFilter ?? ""}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             >
               <option value="">Todos os tipos</option>
               {financialEntryTypeOptions.map((option) => (
@@ -192,17 +192,17 @@ export default async function FinancePage({ searchParams }: PageProps) {
               type="date"
               name="from"
               defaultValue={fromParam ?? ""}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             <input
               type="date"
               name="to"
               defaultValue={toParam ?? ""}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             <button
               type="submit"
-              className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
             >
               Filtrar
             </button>
@@ -216,7 +216,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
             )}
           </form>
 
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <div className="rounded-lg bg-[var(--surface-container-low)] px-4 py-3 text-sm text-[var(--on-surface-variant)]">
             Cada pedido continua com receita e custo base no modulo de pedidos. Os
             lancamentos abaixo refinam o lucro com taxas, anuncios, despesas extras e
             reembolsos.
@@ -235,7 +235,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 success: undefined,
                 error: undefined,
               })}
-              className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white"
+              className="signature-gradient rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.14)]"
             >
               Novo lancamento
             </Link>
@@ -332,7 +332,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 name="type"
                 required
                 defaultValue={selectedEntry?.type ?? FinancialEntryType.EXPENSE}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               >
                 {financialEntryTypeOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -348,7 +348,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 name="category"
                 required
                 defaultValue={selectedEntry?.category ?? financialCategoryOptions[0]?.value}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               >
                 {financialCategoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -365,7 +365,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
               <select
                 name="orderId"
                 defaultValue={selectedEntry?.orderId ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               >
                 <option value="">Sem pedido vinculado</option>
                 {orderOptions.map((order) => (
@@ -385,7 +385,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 step="0.01"
                 required
                 defaultValue={selectedEntry?.amount.toString() ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -400,7 +400,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 defaultValue={toDateTimeLocalValue(
                   selectedEntry?.referenceDate ?? defaultReferenceDate,
                 )}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -410,14 +410,14 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 name="description"
                 rows={4}
                 defaultValue={selectedEntry?.description ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
             <div className="flex flex-wrap gap-3">
               <button
                 type="submit"
-                className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
               >
                 {selectedEntry ? "Salvar alteracoes" : "Criar lancamento"}
               </button>
@@ -669,3 +669,4 @@ export default async function FinancePage({ searchParams }: PageProps) {
     </AppShell>
   );
 }
+

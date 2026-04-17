@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { TaskPriority, TaskStatus } from "@prisma/client";
 import { saveTask, removeTask } from "@/app/tasks/actions";
 import { AppShell } from "@/components/app-shell";
@@ -137,12 +137,12 @@ export default async function TasksPage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por titulo, responsavel ou descricao"
-              className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="min-w-0 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             />
             <select
               name="priority"
               defaultValue={priorityFilter ?? ""}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
             >
               <option value="">Todas as prioridades</option>
               {taskPriorityOptions.map((option) => (
@@ -154,7 +154,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
             {statusFilter ? <input type="hidden" name="status" value={statusFilter} /> : null}
             <button
               type="submit"
-              className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
             >
               Filtrar
             </button>
@@ -178,7 +178,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
               className={`rounded-md border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-700"
+                  : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
               }`}
             >
               Todas
@@ -194,7 +194,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
                     ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-slate-200 bg-white text-slate-700"
+                    : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
                 }`}
               >
                 {option.label}
@@ -215,7 +215,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 success: undefined,
                 error: undefined,
               })}
-              className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white"
+              className="signature-gradient rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.14)]"
             >
               Nova tarefa
             </Link>
@@ -238,7 +238,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 return (
                   <div
                     key={column.value}
-                    className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                    className="rounded-lg bg-[var(--surface-container-low)] p-3"
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-slate-950">{column.label}</h3>
@@ -258,7 +258,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                               success: undefined,
                               error: undefined,
                             })}
-                            className="block rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50"
+                            className="block rounded-lg bg-[var(--surface-container-lowest)] p-4 shadow-[0_12px_30px_rgba(42,52,57,0.06)] transition hover:bg-[var(--surface-container-low)]"
                           >
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="text-sm font-semibold text-slate-950">{task.title}</p>
@@ -313,7 +313,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 name="title"
                 required
                 defaultValue={selectedTask?.title ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -323,7 +323,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 name="description"
                 rows={4}
                 defaultValue={selectedTask?.description ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -333,7 +333,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 name="priority"
                 required
                 defaultValue={selectedTask?.priority ?? TaskPriority.MEDIUM}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               >
                 {taskPriorityOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -349,7 +349,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 name="status"
                 required
                 defaultValue={selectedTask?.status ?? TaskStatus.PENDING}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               >
                 {taskStatusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -365,7 +365,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 type="datetime-local"
                 name="dueDate"
                 defaultValue={toDateTimeLocalValue(selectedTask?.dueDate)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -377,7 +377,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 type="text"
                 name="assigneeName"
                 defaultValue={selectedTask?.assigneeName ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               />
             </label>
 
@@ -388,7 +388,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
               <select
                 name="relatedProductId"
                 defaultValue={selectedTask?.relatedProductId ?? ""}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
               >
                 <option value="">Sem vinculo</option>
                 {products.map((product) => (
@@ -402,7 +402,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
             <div className="col-span-full flex flex-wrap gap-3">
               <button
                 type="submit"
-                className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
               >
                 {selectedTask ? "Salvar alteracoes" : "Criar tarefa"}
               </button>
@@ -435,3 +435,4 @@ export default async function TasksPage({ searchParams }: PageProps) {
     </AppShell>
   );
 }
+
