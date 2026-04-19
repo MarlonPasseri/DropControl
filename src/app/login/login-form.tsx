@@ -45,8 +45,12 @@ export function LoginForm() {
             name="email"
             required
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            maxLength={320}
+            spellCheck={false}
             placeholder="operador@dropshipcontrol.com"
-            className="w-full rounded-lg border-none bg-[var(--surface-container-low)] py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
+            className="w-full rounded-lg border border-transparent bg-[var(--surface-container-low)] py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
           />
         </div>
       </label>
@@ -64,9 +68,10 @@ export function LoginForm() {
             name="password"
             required
             minLength={8}
+            maxLength={72}
             autoComplete="current-password"
             placeholder="Digite sua senha"
-            className="w-full rounded-lg border-none bg-[var(--surface-container-low)] py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
+            className="w-full rounded-lg border border-transparent bg-[var(--surface-container-low)] py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
           />
         </div>
       </label>
@@ -86,7 +91,7 @@ export function LoginForm() {
       </button>
 
       <p className="text-sm text-[var(--on-surface-variant)]">
-        Use a conta cadastrada abaixo para liberar o primeiro acesso.
+        Depois de algumas tentativas sem sucesso, o acesso entra em pausa por alguns minutos.
       </p>
     </form>
   );

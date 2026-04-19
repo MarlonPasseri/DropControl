@@ -24,6 +24,7 @@ export async function getSuppliersByUser(userId: string, filters: SupplierFilter
     include: {
       _count: {
         select: {
+          invoices: true,
           products: true,
           orders: true,
         },
@@ -153,6 +154,7 @@ export async function canDeleteSupplier(userId: string, supplierId: string) {
     select: {
       _count: {
         select: {
+          invoices: true,
           products: true,
           orders: true,
         },
@@ -164,5 +166,9 @@ export async function canDeleteSupplier(userId: string, supplierId: string) {
     return false;
   }
 
-  return supplier._count.products === 0 && supplier._count.orders === 0;
+  return (
+    supplier._count.invoices === 0 &&
+    supplier._count.products === 0 &&
+    supplier._count.orders === 0
+  );
 }

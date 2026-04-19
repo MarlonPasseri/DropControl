@@ -83,6 +83,7 @@ export const navigationItems: NavigationItem[] = [
   { href: "/products", label: "Produtos", shortLabel: "Prod", accent: "bg-blue-500" },
   { href: "/suppliers", label: "Fornecedores", shortLabel: "Forn", accent: "bg-amber-500" },
   { href: "/orders", label: "Pedidos", shortLabel: "Peds", accent: "bg-rose-500" },
+  { href: "/invoices", label: "Notas fiscais", shortLabel: "NF", accent: "bg-cyan-500" },
   { href: "/finance", label: "Financeiro", shortLabel: "Fin", accent: "bg-emerald-500" },
   { href: "/tasks", label: "Tarefas", shortLabel: "Task", accent: "bg-orange-500" },
 ];

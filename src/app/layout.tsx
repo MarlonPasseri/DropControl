@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dropship Control",
-  description: "Blueprint navegavel do MVP para gestao operacional de dropshipping.",
+  title: {
+    default: "Dropship Control",
+    template: "%s | Dropship Control",
+  },
+  description: "Painel operacional para gestao de pedidos, fornecedores, caixa e notas fiscais.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({
@@ -12,7 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="h-full antialiased">
+    <html
+      lang="pt-BR"
+      className="h-full antialiased"
+      data-scroll-behavior="smooth"
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

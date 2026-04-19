@@ -119,7 +119,7 @@ export async function removeSupplier(formData: FormData) {
 
   if (!canDelete) {
     supplierRedirect({
-      error: "Esse fornecedor ainda esta vinculado a produtos ou pedidos.",
+      error: "Esse fornecedor ainda esta vinculado a produtos, pedidos ou notas fiscais.",
       edit: supplierId,
     });
   }

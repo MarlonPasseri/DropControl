@@ -203,7 +203,7 @@ export async function removeOrder(formData: FormData) {
 
   if (!canDelete) {
     ordersRedirect({
-      error: "Esse pedido possui tarefas ou lancamentos financeiros vinculados.",
+      error: "Esse pedido possui tarefas, lancamentos financeiros ou notas fiscais vinculadas.",
       edit: orderId,
     });
   }

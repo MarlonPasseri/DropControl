@@ -68,6 +68,11 @@ export async function getOrdersByUser(userId: string, filters: OrderFilters = {}
           name: true,
         },
       },
+      _count: {
+        select: {
+          invoices: true,
+        },
+      },
     },
     orderBy: [
       {
@@ -99,6 +104,20 @@ export async function getOrderById(userId: string, orderId: string) {
           id: true,
           name: true,
         },
+      },
+      invoices: {
+        select: {
+          id: true,
+          number: true,
+          series: true,
+          type: true,
+          status: true,
+          issueDate: true,
+          dueDate: true,
+          amount: true,
+        },
+        orderBy: [{ issueDate: "desc" }, { createdAt: "desc" }],
+        take: 6,
       },
     },
   });
@@ -280,6 +299,7 @@ export async function canDeleteOrder(userId: string, orderId: string) {
       _count: {
         select: {
           financialEntries: true,
+          invoices: true,
           tasks: true,
         },
       },
@@ -290,7 +310,11 @@ export async function canDeleteOrder(userId: string, orderId: string) {
     return false;
   }
 
-  return order._count.financialEntries === 0 && order._count.tasks === 0;
+  return (
+    order._count.financialEntries === 0 &&
+    order._count.invoices === 0 &&
+    order._count.tasks === 0
+  );
 }
 
 export async function getDashboardData(userId: string) {

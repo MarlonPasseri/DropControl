@@ -1,11 +1,35 @@
 "use server";
 
+import { headers } from "next/headers";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { type FormState, initialFormState } from "@/app/login/form-state";
 import { createUser, getUserByEmail, getUserCount } from "@/lib/data/users";
 import { hashPassword } from "@/lib/password";
+import {
+  clearRegistrationFailures,
+  getClientIp,
+  isRegistrationBlocked,
+  recordRegistrationFailure,
+} from "@/lib/security/auth-guard";
 import { registerSchema, signInSchema } from "@/lib/validations/auth";
+
+function resolveRedirectTarget(rawTarget?: string) {
+  if (!rawTarget) {
+    return "/dashboard";
+  }
+
+  if (rawTarget.startsWith("/")) {
+    return rawTarget;
+  }
+
+  try {
+    const url = new URL(rawTarget);
+    return `${url.pathname}${url.search}${url.hash}` || "/dashboard";
+  } catch {
+    return "/dashboard";
+  }
+}
 
 export async function authenticate(
   _prevState: FormState,
@@ -25,14 +49,23 @@ export async function authenticate(
   }
 
   try {
-    await signIn("credentials", formData);
+    await signIn("credentials", {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      redirectTo: resolveRedirectTarget(parsed.data.redirectTo),
+    });
   } catch (error) {
     if (error instanceof AuthError) {
+      const authError = error as AuthError & { code?: string };
+
       switch (error.type) {
         case "CredentialsSignin":
           return {
             status: "error",
-            message: "E-mail ou senha invalidos.",
+            message:
+              authError.code === "temporarily_blocked"
+                ? "Muitas tentativas de acesso. Aguarde 10 minutos e tente novamente."
+                : "E-mail ou senha invalidos.",
           };
         default:
           return {
@@ -52,6 +85,15 @@ export async function registerOperator(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  const clientIp = getClientIp(await headers());
+
+  if (isRegistrationBlocked(clientIp)) {
+    return {
+      status: "error",
+      message: "Cadastro temporariamente bloqueado. Aguarde alguns minutos e tente novamente.",
+    };
+  }
+
   const parsed = registerSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -60,6 +102,7 @@ export async function registerOperator(
   });
 
   if (!parsed.success) {
+    recordRegistrationFailure(clientIp);
     return {
       status: "error",
       message: parsed.error.issues[0]?.message ?? "Revise os dados da conta.",
@@ -69,16 +112,25 @@ export async function registerOperator(
   const { name, email, password } = parsed.data;
 
   try {
+    const totalUsers = await getUserCount();
+
+    if (totalUsers > 0) {
+      return {
+        status: "error",
+        message: "Cadastro publico encerrado. Entre com uma conta ja liberada.",
+      };
+    }
+
     const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
+      recordRegistrationFailure(clientIp);
       return {
         status: "error",
         message: "Ja existe uma conta com esse e-mail.",
       };
     }
 
-    const totalUsers = await getUserCount();
     const passwordHash = await hashPassword(password);
 
     await createUser({
@@ -86,6 +138,8 @@ export async function registerOperator(
       email,
       passwordHash,
     });
+
+    clearRegistrationFailures(clientIp);
 
     return {
       status: "success",
@@ -95,6 +149,7 @@ export async function registerOperator(
           : "Conta criada com sucesso. Agora e so entrar.",
     };
   } catch {
+    recordRegistrationFailure(clientIp);
     return {
       status: "error",
       message:

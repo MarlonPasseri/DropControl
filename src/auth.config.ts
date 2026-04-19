@@ -5,6 +5,7 @@ const protectedPrefixes = [
   "/products",
   "/suppliers",
   "/orders",
+  "/invoices",
   "/finance",
   "/tasks",
 ];
@@ -15,6 +16,8 @@ export const authConfig = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60 * 8,
+    updateAge: 60 * 60,
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {

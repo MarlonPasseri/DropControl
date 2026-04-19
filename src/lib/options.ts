@@ -2,6 +2,8 @@ import {
   ContactChannel,
   FinancialCategory,
   FinancialEntryType,
+  InvoiceStatus,
+  InvoiceType,
   OrderStatus,
   ProductStatus,
   TaskPriority,
@@ -68,6 +70,18 @@ export const financialCategoryOptions = [
   { value: FinancialCategory.OTHER, label: "Outro" },
 ] as const;
 
+export const invoiceTypeOptions = [
+  { value: InvoiceType.PURCHASE, label: "Compra" },
+  { value: InvoiceType.SALE, label: "Venda" },
+] as const;
+
+export const invoiceStatusOptions = [
+  { value: InvoiceStatus.PENDING, label: "Pendente" },
+  { value: InvoiceStatus.ISSUED, label: "Emitida" },
+  { value: InvoiceStatus.PAID, label: "Paga" },
+  { value: InvoiceStatus.CANCELED, label: "Cancelada" },
+] as const;
+
 export function getProductStatusLabel(status: ProductStatus) {
   return productStatusOptions.find((option) => option.value === status)?.label ?? status;
 }
@@ -100,4 +114,12 @@ export function getFinancialCategoryLabel(category: FinancialCategory) {
   return (
     financialCategoryOptions.find((option) => option.value === category)?.label ?? category
   );
+}
+
+export function getInvoiceTypeLabel(type: InvoiceType) {
+  return invoiceTypeOptions.find((option) => option.value === type)?.label ?? type;
+}
+
+export function getInvoiceStatusLabel(status: InvoiceStatus) {
+  return invoiceStatusOptions.find((option) => option.value === status)?.label ?? status;
 }

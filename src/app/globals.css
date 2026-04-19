@@ -1,31 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f9fb;
-  --foreground: #2a3439;
-  --surface: #f7f9fb;
+  --background: #edf4f0;
+  --foreground: #263238;
+  --surface: #f4f8f5;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f0f4f7;
-  --surface-container: #e8eff3;
-  --surface-container-high: #e1e9ee;
-  --surface-container-highest: #d9e4ea;
-  --surface-variant: #d9e4ea;
-  --outline: #717c82;
-  --outline-variant: #a9b4b9;
-  --primary: #565e74;
-  --primary-dim: #4a5268;
-  --primary-container: #dae2fd;
-  --on-primary: #f7f7ff;
-  --on-primary-container: #4a5167;
-  --secondary: #526074;
-  --secondary-container: #d5e3fc;
-  --on-secondary-container: #455367;
-  --tertiary: #605c78;
-  --tertiary-container: #e3dbfd;
-  --on-tertiary-container: #514d68;
-  --on-surface-variant: #566166;
-  --error: #9f403d;
-  --error-container: #fe8983;
+  --surface-container-low: #edf5ef;
+  --surface-container: #e6efe9;
+  --surface-container-high: #dbe8e0;
+  --surface-container-highest: #cfddd4;
+  --surface-variant: #cfddd4;
+  --outline: #66746f;
+  --outline-variant: #a7b4ad;
+  --primary: #1f6b66;
+  --primary-dim: #195954;
+  --primary-container: #d6f1ea;
+  --on-primary: #f7fffd;
+  --on-primary-container: #134a46;
+  --secondary: #b95f42;
+  --secondary-container: #ffe2d5;
+  --on-secondary-container: #73341d;
+  --tertiary: #a17a22;
+  --tertiary-container: #f6e5b7;
+  --on-tertiary-container: #5e4300;
+  --on-surface-variant: #5b6761;
+  --error: #b33f3a;
+  --error-container: #ffd8d6;
 }
 
 @theme inline {
@@ -43,7 +43,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--background);
+  background: linear-gradient(180deg, #eef5f1 0%, #f7fbf8 100%);
   color: var(--foreground);
   font-family: "Inter", Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
@@ -65,7 +65,7 @@ h3,
 }
 
 .signature-gradient {
-  background: linear-gradient(135deg, #565e74 0%, #dae2fd 100%);
+  background: linear-gradient(135deg, #1f6b66 0%, #b95f42 100%);
 }
 
 a {
@@ -78,6 +78,24 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid rgba(31, 107, 102, 0.28);
+  outline-offset: 2px;
+}
+
+button,
+input,
+textarea,
+select,
+a {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
 }
 
 ::selection {

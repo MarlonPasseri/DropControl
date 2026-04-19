@@ -192,7 +192,7 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                       <StatusPill label={formatPercent(supplier.issueRate ?? 0)} />
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm">
                       <p className="text-slate-500">Prazo medio</p>
                       <p className="mt-1 font-semibold text-slate-950">
@@ -209,6 +209,12 @@ export default async function SuppliersPage({ searchParams }: PageProps) {
                       <p className="text-slate-500">Pedidos em aberto</p>
                       <p className="mt-1 font-semibold text-slate-950">
                         {supplier._count.orders}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm">
+                      <p className="text-slate-500">Notas fiscais</p>
+                      <p className="mt-1 font-semibold text-slate-950">
+                        {supplier._count.invoices}
                       </p>
                     </div>
                   </div>

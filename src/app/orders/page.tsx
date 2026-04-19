@@ -22,9 +22,19 @@ import {
 } from "@/lib/data/orders";
 import { getProductsByUser } from "@/lib/data/products";
 import { getSupplierOptions } from "@/lib/data/suppliers";
-import { formatCurrency, formatDate, toDateTimeLocalValue } from "@/lib/formatters";
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  toDateTimeLocalValue,
+} from "@/lib/formatters";
 import { parsePageParam, paginateItems } from "@/lib/pagination";
-import { getOrderStatusLabel, orderStatusOptions } from "@/lib/options";
+import {
+  getInvoiceStatusLabel,
+  getInvoiceTypeLabel,
+  getOrderStatusLabel,
+  orderStatusOptions,
+} from "@/lib/options";
 import { requireUser } from "@/lib/require-user";
 
 type PageProps = {
@@ -285,6 +295,9 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                           <p className="mt-1 text-slate-500">{formatDate(order.purchaseDate)}</p>
                           <p className="mt-2 text-xs text-slate-400">
                             ETA {formatDate(order.estimatedDeliveryDate)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {order._count.invoices} notas fiscais vinculadas
                           </p>
                         </Link>
                       </td>
@@ -568,6 +581,57 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               </form>
             )}
           </AppPanel>
+
+          {selectedOrder ? (
+            <AppPanel
+              title="Notas fiscais do pedido"
+              eyebrow="Integracao fiscal"
+              action={
+                <Link
+                  href={`/invoices?order=${selectedOrder.id}`}
+                  className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+                >
+                  Nova NF
+                </Link>
+              }
+            >
+              {selectedOrder.invoices.length === 0 ? (
+                <EmptyHint text="Ainda nao existe nota fiscal vinculada a este pedido." />
+              ) : (
+                <div className="space-y-3">
+                  {selectedOrder.invoices.map((invoice) => (
+                    <Link
+                      key={invoice.id}
+                      href={`/invoices?edit=${invoice.id}`}
+                      className="block rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-slate-950">
+                            NF {invoice.number}
+                            {invoice.series ? ` / ${invoice.series}` : ""}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Emissao {formatDateTime(invoice.issueDate)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Vencimento {formatDate(invoice.dueDate)}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <StatusPill label={getInvoiceTypeLabel(invoice.type)} />
+                          <StatusPill label={getInvoiceStatusLabel(invoice.status)} />
+                        </div>
+                      </div>
+                      <p className="mt-3 text-sm font-medium text-slate-900">
+                        {formatCurrency(invoice.amount)}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </AppPanel>
+          ) : null}
 
           <AppPanel title="Regras de alerta" eyebrow="Motor simples do MVP">
             <div className="space-y-3 text-sm text-slate-600">

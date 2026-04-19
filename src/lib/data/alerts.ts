@@ -1,4 +1,9 @@
-import { FinancialEntryType, OrderStatus, TaskStatus } from "@prisma/client";
+import {
+  FinancialEntryType,
+  InvoiceStatus,
+  OrderStatus,
+  TaskStatus,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/formatters";
 
@@ -48,6 +53,7 @@ export async function getAlertCenterData(userId: string) {
     overdueTasks,
     tasksDueSoon,
     recentRefunds,
+    openInvoices,
   ] = await Promise.all([
     prisma.order.findMany({
       where: {
@@ -213,6 +219,40 @@ export async function getAlertCenterData(userId: string) {
       },
       take: 4,
     }),
+    prisma.invoice.findMany({
+      where: {
+        userId,
+        status: {
+          in: [InvoiceStatus.PENDING, InvoiceStatus.ISSUED],
+        },
+        dueDate: {
+          not: null,
+          lte: soonCutoff,
+        },
+      },
+      select: {
+        id: true,
+        number: true,
+        amount: true,
+        dueDate: true,
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+          },
+        },
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        dueDate: "asc",
+      },
+      take: 5,
+    }),
   ]);
 
   const alerts: AlertItem[] = [
@@ -297,6 +337,29 @@ export async function getAlertCenterData(userId: string) {
       actionLabel: refund.order ? "Abrir pedido" : "Abrir financeiro",
       sortDate: refund.referenceDate,
     })),
+    ...openInvoices.map((invoice) => {
+      const dueDate = invoice.dueDate ?? now;
+      const isOverdue = dueDate < now;
+
+      return {
+        id: `finance-invoice-${invoice.id}`,
+        severity: isOverdue ? ("high" as const) : ("medium" as const),
+        category: "finance" as const,
+        title: isOverdue
+          ? `NF ${invoice.number} com vencimento estourado`
+          : `NF ${invoice.number} vence em breve`,
+        description: `${
+          invoice.order
+            ? `Pedido ${invoice.order.orderNumber}`
+            : invoice.supplier
+              ? `Fornecedor ${invoice.supplier.name}`
+              : "Sem vinculo"
+        } em ${formatCurrency(invoice.amount)}.`,
+        href: `/invoices?edit=${invoice.id}`,
+        actionLabel: "Abrir nota fiscal",
+        sortDate: dueDate,
+      };
+    }),
   ].sort((left, right) => {
     const severityDifference = severityRank(left.severity) - severityRank(right.severity);
 

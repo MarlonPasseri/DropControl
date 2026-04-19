@@ -20,6 +20,7 @@ import {
   getFinancialEntriesByUser,
   getFinancialEntryById,
 } from "@/lib/data/finance";
+import { getInvoiceFinanceSnapshot } from "@/lib/data/invoices";
 import { getOrderOptions } from "@/lib/data/orders";
 import {
   formatCurrency,
@@ -34,6 +35,8 @@ import {
   financialEntryTypeOptions,
   getFinancialCategoryLabel,
   getFinancialEntryTypeLabel,
+  getInvoiceStatusLabel,
+  getInvoiceTypeLabel,
   getOrderStatusLabel,
 } from "@/lib/options";
 import { requireUser } from "@/lib/require-user";
@@ -109,7 +112,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
     : undefined;
   const defaultReferenceDate = new Date();
 
-  const [analytics, entries, orderOptions, selectedEntry] = await Promise.all([
+  const [analytics, entries, orderOptions, selectedEntry, invoiceSnapshot] = await Promise.all([
     getFinanceAnalytics(user.id),
     getFinancialEntriesByUser(user.id, {
       query: query || undefined,
@@ -119,6 +122,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
     }),
     getOrderOptions(user.id),
     editId ? getFinancialEntryById(user.id, editId) : Promise.resolve(null),
+    getInvoiceFinanceSnapshot(user.id),
   ]);
   const paginatedEntries = paginateItems(entries, page);
 
@@ -618,6 +622,111 @@ export default async function FinancePage({ searchParams }: PageProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </AppPanel>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+        <AppPanel
+          title="Controle fiscal"
+          eyebrow="Notas fiscais"
+          action={
+            <Link
+              href="/invoices"
+              className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+            >
+              Abrir notas fiscais
+            </Link>
+          }
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Em aberto
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
+                {invoiceSnapshot.openCount}
+              </p>
+            </div>
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">
+                Vencidas
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
+                {invoiceSnapshot.overdueCount}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Valor em aberto
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-950">
+                {formatCurrency(invoiceSnapshot.totalOpenAmount)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Tributos do mes
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-950">
+                {formatCurrency(invoiceSnapshot.monthTaxAmount)}
+              </p>
+            </div>
+          </div>
+        </AppPanel>
+
+        <AppPanel title="Notas fiscais em aberto" eyebrow="Acompanhar agora">
+          {invoiceSnapshot.recentInvoices.length === 0 ? (
+            <EmptyHint text="Nenhuma nota fiscal pendente no momento." />
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-[820px] divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Nota</th>
+                    <th className="px-4 py-3 font-medium">Vinculo</th>
+                    <th className="px-4 py-3 font-medium">Datas</th>
+                    <th className="px-4 py-3 font-medium">Valor</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {invoiceSnapshot.recentInvoices.map((invoice) => (
+                    <tr key={invoice.id}>
+                      <td className="px-4 py-4 align-top">
+                        <Link
+                          href={`/invoices?edit=${invoice.id}`}
+                          className="font-medium text-slate-950 transition hover:text-slate-600"
+                        >
+                          NF {invoice.number}
+                        </Link>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {getInvoiceTypeLabel(invoice.type)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 align-top text-slate-600">
+                        <p>{invoice.order ? `Pedido ${invoice.order.orderNumber}` : "Sem pedido"}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {invoice.supplier?.name || "Sem fornecedor"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 align-top text-slate-600">
+                        <p>Emissao {formatDate(invoice.issueDate)}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Vencimento {formatDate(invoice.dueDate)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 align-top font-medium text-slate-950">
+                        {formatCurrency(invoice.amount)}
+                      </td>
+                      <td className="px-4 py-4 align-top">
+                        <StatusPill label={getInvoiceStatusLabel(invoice.status)} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </AppPanel>

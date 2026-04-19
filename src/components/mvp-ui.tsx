@@ -31,10 +31,10 @@ const accentMap: Record<
     value: "text-slate-900",
   },
   blue: {
-    card: "signature-gradient shadow-[0_16px_30px_rgba(86,94,116,0.16)]",
+    card: "signature-gradient shadow-[0_18px_36px_rgba(25,89,84,0.16)]",
     iconWrap: "bg-white/15 text-white",
     icon: "trending_up",
-    eyebrow: "text-[var(--primary-container)]",
+    eyebrow: "text-white/72",
     note: "text-white/80",
     value: "text-white",
   },
@@ -71,6 +71,11 @@ const statusMap: Record<string, string> = {
   Problema: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
   Reembolsado: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
   Cancelado: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Compra: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Venda: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
+  Emitida: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
+  Paga: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Cancelada: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
   Receita: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
   Despesa: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
   Reembolso: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
@@ -94,7 +99,7 @@ export function AppPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg bg-[var(--surface-container-lowest)] p-6 shadow-[0_20px_40px_rgba(42,52,57,0.06)]">
+    <section className="rounded-lg border border-[var(--surface-container-highest)] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(248,251,249,0.98)_100%)] p-6 shadow-[0_22px_40px_rgba(31,45,40,0.06)]">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           {eyebrow ? (
@@ -125,7 +130,9 @@ export function MetricCard({
   const theme = accentMap[accent];
 
   return (
-    <div className={`flex min-h-[172px] flex-col justify-between rounded-lg p-6 ${theme.card}`}>
+    <div
+      className={`flex min-h-[172px] flex-col justify-between rounded-lg border border-white/40 p-6 ${theme.card}`}
+    >
       <div>
         <div
           className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${theme.iconWrap}`}
@@ -149,7 +156,7 @@ export function MetricCard({
 export function StatusPill({ label }: { label: string }) {
   return (
     <span
-      className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${
+      className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] ${
         statusMap[label] ?? "bg-slate-100 text-slate-900"
       }`}
     >
@@ -238,13 +245,16 @@ export function NoticeBanner({
 }) {
   return (
     <div
-      className={`rounded-lg px-4 py-3 text-sm ${
+      className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${
         tone === "success"
-          ? "bg-[color:rgba(213,227,252,0.45)] text-[var(--on-secondary-container)]"
-          : "bg-[color:rgba(254,137,131,0.18)] text-[var(--error)]"
+          ? "border-[color:rgba(31,107,102,0.12)] bg-[color:rgba(214,241,234,0.74)] text-[var(--on-primary-container)]"
+          : "border-[color:rgba(179,63,58,0.16)] bg-[color:rgba(255,216,214,0.72)] text-[var(--error)]"
       }`}
     >
-      {text}
+      <span className="material-symbols-outlined text-[18px]">
+        {tone === "success" ? "verified" : "warning"}
+      </span>
+      <span>{text}</span>
     </div>
   );
 }

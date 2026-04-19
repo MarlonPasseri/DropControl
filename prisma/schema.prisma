@@ -40,6 +40,18 @@ enum FinancialEntryType {
   REFUND
 }
 
+enum InvoiceType {
+  PURCHASE
+  SALE
+}
+
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  PAID
+  CANCELED
+}
+
 enum FinancialCategory {
   ORDER_REVENUE
   PRODUCT_COST
@@ -72,6 +84,7 @@ model User {
   products         Product[]
   orders           Order[]
   financialEntries FinancialEntry[]
+  invoices         Invoice[]
   tasks            Task[]
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
@@ -93,6 +106,7 @@ model Supplier {
   notes            String?         @db.Text
   products         Product[]
   orders           Order[]
+  invoices         Invoice[]
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 
@@ -149,6 +163,7 @@ model Order {
   deliveredDate         DateTime?        @map("delivered_date")
   notes                 String?          @db.Text
   financialEntries      FinancialEntry[]
+  invoices              Invoice[]
   tasks                 Task[]
   createdAt             DateTime         @default(now()) @map("created_at")
   updatedAt             DateTime         @updatedAt @map("updated_at")
@@ -177,6 +192,34 @@ model FinancialEntry {
   @@index([userId, type, referenceDate])
   @@index([orderId])
   @@map("financial_entries")
+}
+
+model Invoice {
+  id         String        @id @default(cuid()) @db.VarChar(191)
+  userId     String        @map("user_id") @db.VarChar(191)
+  orderId    String?       @map("order_id") @db.VarChar(191)
+  supplierId String?       @map("supplier_id") @db.VarChar(191)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order      Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  supplier   Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  number     String
+  series     String?
+  accessKey  String?       @map("access_key")
+  type       InvoiceType
+  status     InvoiceStatus
+  issueDate  DateTime      @map("issue_date")
+  dueDate    DateTime?     @map("due_date")
+  amount     Decimal       @db.Decimal(10, 2)
+  taxAmount  Decimal?      @map("tax_amount") @db.Decimal(10, 2)
+  notes      String?       @db.Text
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  @@index([userId, status, issueDate])
+  @@index([userId, type, status])
+  @@index([orderId])
+  @@index([supplierId])
+  @@map("invoices")
 }
 
 model Task {

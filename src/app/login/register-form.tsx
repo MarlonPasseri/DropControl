@@ -21,8 +21,9 @@ export function RegisterForm() {
           name="name"
           required
           autoComplete="name"
+          maxLength={80}
           placeholder="Seu nome"
-          className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
+          className="w-full rounded-lg border border-transparent bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
         />
       </label>
 
@@ -35,8 +36,12 @@ export function RegisterForm() {
           name="email"
           required
           autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          maxLength={320}
+          spellCheck={false}
           placeholder="voce@empresa.com"
-          className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
+          className="w-full rounded-lg border border-transparent bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
         />
       </label>
 
@@ -49,10 +54,11 @@ export function RegisterForm() {
             type="password"
             name="password"
             required
-            minLength={8}
+            minLength={12}
+            maxLength={72}
             autoComplete="new-password"
-            placeholder="Minimo de 8 caracteres"
-            className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
+            placeholder="Minimo de 12 caracteres"
+            className="w-full rounded-lg border border-transparent bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
           />
         </label>
 
@@ -64,10 +70,11 @@ export function RegisterForm() {
             type="password"
             name="confirmPassword"
             required
-            minLength={8}
+            minLength={12}
+            maxLength={72}
             autoComplete="new-password"
             placeholder="Repita a senha"
-            className="w-full rounded-lg border-none bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)]"
+            className="w-full rounded-lg border border-transparent bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
           />
         </label>
       </div>
