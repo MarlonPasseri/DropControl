@@ -152,7 +152,7 @@ export async function removeProduct(formData: FormData) {
 
   if (!canDelete) {
     productRedirect({
-      error: "Esse produto nao pode ser removido porque ja possui pedidos.",
+      error: "Esse produto nao pode ser removido porque ja possui pedidos ou notas fiscais.",
       edit: productId,
     });
   }

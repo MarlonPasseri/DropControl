@@ -10,7 +10,142 @@ export type InvoiceFilters = {
   to?: Date;
 };
 
+export type InvoiceArchiveMonth = {
+  year: number;
+  month: number;
+  storedCount: number;
+  reportableCount: number;
+  canceledCount: number;
+  totalAmount: number;
+  totalTaxAmount: number;
+  purchaseAmount: number;
+  saleAmount: number;
+};
+
+export type InvoiceArchiveYear = {
+  year: number;
+  storedCount: number;
+  reportableCount: number;
+  canceledCount: number;
+  totalAmount: number;
+  totalTaxAmount: number;
+  purchaseAmount: number;
+  saleAmount: number;
+  months: InvoiceArchiveMonth[];
+};
+
+export type InvoiceArchiveSnapshot = {
+  years: InvoiceArchiveYear[];
+};
+
 const openStatuses: InvoiceStatus[] = [InvoiceStatus.PENDING, InvoiceStatus.ISSUED];
+
+const invoiceListSelect = {
+  id: true,
+  userId: true,
+  orderId: true,
+  supplierId: true,
+  number: true,
+  series: true,
+  accessKey: true,
+  type: true,
+  status: true,
+  issueDate: true,
+  dueDate: true,
+  amount: true,
+  taxAmount: true,
+  notes: true,
+  xmlFileName: true,
+  createdAt: true,
+  updatedAt: true,
+  order: {
+    select: {
+      id: true,
+      orderNumber: true,
+      customerName: true,
+    },
+  },
+  supplier: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  invoiceProducts: {
+    select: {
+      id: true,
+      itemNumber: true,
+      quantity: true,
+      unitPrice: true,
+      lineAmount: true,
+      product: {
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+        },
+      },
+    },
+    orderBy: {
+      itemNumber: "asc",
+    },
+  },
+} satisfies Prisma.InvoiceSelect;
+
+const invoiceDetailSelect = {
+  id: true,
+  userId: true,
+  orderId: true,
+  supplierId: true,
+  number: true,
+  series: true,
+  accessKey: true,
+  type: true,
+  status: true,
+  issueDate: true,
+  dueDate: true,
+  amount: true,
+  taxAmount: true,
+  notes: true,
+  xmlFileName: true,
+  xmlContent: true,
+  createdAt: true,
+  updatedAt: true,
+  order: {
+    select: {
+      id: true,
+      orderNumber: true,
+      customerName: true,
+      supplierId: true,
+    },
+  },
+  supplier: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  invoiceProducts: {
+    select: {
+      id: true,
+      itemNumber: true,
+      quantity: true,
+      unitPrice: true,
+      lineAmount: true,
+      product: {
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          status: true,
+        },
+      },
+    },
+    orderBy: {
+      itemNumber: "asc",
+    },
+  },
+} satisfies Prisma.InvoiceSelect;
 
 function buildInvoiceWhere(
   userId: string,
@@ -60,21 +195,7 @@ export async function getInvoicesByUser(
 ) {
   return prisma.invoice.findMany({
     where: buildInvoiceWhere(userId, filters),
-    include: {
-      order: {
-        select: {
-          id: true,
-          orderNumber: true,
-          customerName: true,
-        },
-      },
-      supplier: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
+    select: invoiceListSelect,
     orderBy: [{ issueDate: "desc" }, { createdAt: "desc" }],
   });
 }
@@ -85,22 +206,7 @@ export async function getInvoiceById(userId: string, invoiceId: string) {
       id: invoiceId,
       userId,
     },
-    include: {
-      order: {
-        select: {
-          id: true,
-          orderNumber: true,
-          customerName: true,
-          supplierId: true,
-        },
-      },
-      supplier: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
+    select: invoiceDetailSelect,
   });
 }
 
@@ -222,7 +328,15 @@ export async function getInvoiceFinanceSnapshot(userId: string, referenceDate = 
       }),
       prisma.invoice.findMany({
         where: openWhere,
-        include: {
+        select: {
+          id: true,
+          number: true,
+          series: true,
+          type: true,
+          status: true,
+          issueDate: true,
+          dueDate: true,
+          amount: true,
           order: {
             select: {
               id: true,
@@ -263,6 +377,8 @@ export async function createInvoice(input: {
   dueDate?: Date | null;
   amount: number;
   taxAmount?: number | null;
+  xmlFileName?: string;
+  xmlContent?: string;
   notes?: string;
 }) {
   return prisma.invoice.create({
@@ -329,4 +445,111 @@ export async function getInvoiceOpenAmountBySupplier(userId: string) {
       (accumulator[invoice.supplierId] ?? 0) + toNumber(invoice.amount);
     return accumulator;
   }, {});
+}
+
+function createEmptyArchiveMonth(year: number, month: number): InvoiceArchiveMonth {
+  return {
+    year,
+    month,
+    storedCount: 0,
+    reportableCount: 0,
+    canceledCount: 0,
+    totalAmount: 0,
+    totalTaxAmount: 0,
+    purchaseAmount: 0,
+    saleAmount: 0,
+  };
+}
+
+function createEmptyArchiveYear(year: number): InvoiceArchiveYear {
+  return {
+    year,
+    storedCount: 0,
+    reportableCount: 0,
+    canceledCount: 0,
+    totalAmount: 0,
+    totalTaxAmount: 0,
+    purchaseAmount: 0,
+    saleAmount: 0,
+    months: [],
+  };
+}
+
+export async function getInvoiceArchiveSnapshot(userId: string): Promise<InvoiceArchiveSnapshot> {
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      userId,
+    },
+    select: {
+      issueDate: true,
+      amount: true,
+      taxAmount: true,
+      type: true,
+      status: true,
+    },
+    orderBy: [{ issueDate: "desc" }, { createdAt: "desc" }],
+  });
+
+  const yearMap = new Map<number, InvoiceArchiveYear>();
+  const monthMap = new Map<string, InvoiceArchiveMonth>();
+
+  for (const invoice of invoices) {
+    const year = invoice.issueDate.getFullYear();
+    const month = invoice.issueDate.getMonth() + 1;
+    const monthKey = `${year}-${`${month}`.padStart(2, "0")}`;
+    const isCanceled = invoice.status === InvoiceStatus.CANCELED;
+    const amount = toNumber(invoice.amount);
+    const taxAmount = toNumber(invoice.taxAmount ?? 0);
+
+    let yearEntry = yearMap.get(year);
+
+    if (!yearEntry) {
+      yearEntry = createEmptyArchiveYear(year);
+      yearMap.set(year, yearEntry);
+    }
+
+    let monthEntry = monthMap.get(monthKey);
+
+    if (!monthEntry) {
+      monthEntry = createEmptyArchiveMonth(year, month);
+      monthMap.set(monthKey, monthEntry);
+      yearEntry.months.push(monthEntry);
+    }
+
+    yearEntry.storedCount += 1;
+    monthEntry.storedCount += 1;
+
+    if (isCanceled) {
+      yearEntry.canceledCount += 1;
+      monthEntry.canceledCount += 1;
+      continue;
+    }
+
+    yearEntry.reportableCount += 1;
+    yearEntry.totalAmount += amount;
+    yearEntry.totalTaxAmount += taxAmount;
+    if (invoice.type === InvoiceType.PURCHASE) {
+      yearEntry.purchaseAmount += amount;
+    } else {
+      yearEntry.saleAmount += amount;
+    }
+
+    monthEntry.reportableCount += 1;
+    monthEntry.totalAmount += amount;
+    monthEntry.totalTaxAmount += taxAmount;
+    if (invoice.type === InvoiceType.PURCHASE) {
+      monthEntry.purchaseAmount += amount;
+    } else {
+      monthEntry.saleAmount += amount;
+    }
+  }
+
+  const years = Array.from(yearMap.values())
+    .map((yearEntry) => ({
+      ...yearEntry,
+      months: yearEntry.months.sort((left, right) => right.month - left.month),
+    }))
+    .sort((left, right) => right.year - left.year);
+
+  return { years };
 }

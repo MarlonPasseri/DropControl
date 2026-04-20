@@ -11,6 +11,22 @@ export type ParsedInvoiceXml = {
   amount: number;
   taxAmount?: number;
   notes?: string;
+  items: ParsedInvoiceXmlItem[];
+};
+
+export type ParsedInvoiceXmlItem = {
+  itemNumber: string;
+  name: string;
+  productCode?: string;
+  ean?: string;
+  ncm?: string;
+  cfop?: string;
+  quantity: number;
+  unitPrice: number;
+  lineAmount: number;
+  shippingAmount: number;
+  discountAmount: number;
+  skuCandidates: string[];
 };
 
 const TAG_PREFIX = String.raw`(?:[A-Za-z_][\w.-]*:)?`;
@@ -41,6 +57,25 @@ function getElementInner(xml: string, tag: string) {
   ).exec(xml);
 
   return match ? match[1] : undefined;
+}
+
+function getElementEntries(xml: string, tag: string) {
+  const matches = xml.matchAll(
+    new RegExp(
+      `<${TAG_PREFIX}${tag}\\b([^>]*)>([\\s\\S]*?)<\\/${TAG_PREFIX}${tag}>`,
+      "gi",
+    ),
+  );
+
+  return Array.from(matches, (match) => ({
+    attributes: match[1] ?? "",
+    inner: match[2] ?? "",
+  }));
+}
+
+function getAttributeValue(attributes: string, attribute: string) {
+  const attributeMatch = new RegExp(`${attribute}\\s*=\\s*(['"])(.*?)\\1`, "i").exec(attributes);
+  return attributeMatch ? decodeXmlEntities(attributeMatch[2].trim()) : undefined;
 }
 
 function getElementAttribute(xml: string, tag: string, attribute: string) {
@@ -92,6 +127,28 @@ function requireDecimal(value: string | undefined, fieldLabel: string) {
   }
 
   return parsedValue;
+}
+
+function normalizeSkuCandidate(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim().replace(/\s+/g, " ").toUpperCase();
+
+  if (!normalized || ["SEM GTIN", "NO GTIN", "PADRAO", "DEFAULT"].includes(normalized)) {
+    return undefined;
+  }
+
+  if (/^0+$/.test(normalized)) {
+    return undefined;
+  }
+
+  return normalized;
+}
+
+function sumDecimalTagValues(xml: string, tag: string) {
+  return getTagValues(xml, tag).reduce((sum, value) => sum + (parseDecimal(value) ?? 0), 0);
 }
 
 function parseXmlDate(value: string | undefined) {
@@ -164,6 +221,85 @@ function buildNotes(xml: string) {
   return notes.join(" | ");
 }
 
+function resolveTotalTax(infNFeBlock: string, totalsBlock: string) {
+  const totalTaxFromTotals = parseDecimal(getTagValue(totalsBlock, "vTotTrib"));
+
+  if (totalTaxFromTotals !== undefined) {
+    return totalTaxFromTotals;
+  }
+
+  const totalTaxFromItems = sumDecimalTagValues(infNFeBlock, "vTotTrib");
+
+  if (totalTaxFromItems > 0) {
+    return totalTaxFromItems;
+  }
+
+  return ["vICMS", "vST", "vFCP", "vIPI", "vII", "vPIS", "vCOFINS", "vIOF"].reduce(
+    (sum, tag) => sum + (parseDecimal(getTagValue(totalsBlock, tag)) ?? 0),
+    0,
+  );
+}
+
+function parseInvoiceItems(infNFeBlock: string): ParsedInvoiceXmlItem[] {
+  return getElementEntries(infNFeBlock, "det")
+    .map<ParsedInvoiceXmlItem | null>(({ attributes, inner }, index) => {
+      const prodBlock = getElementInner(inner, "prod") ?? "";
+      const itemNumber = getAttributeValue(attributes, "nItem") ?? String(index + 1);
+      const name = getTagValue(prodBlock, "xProd") ?? getTagValue(prodBlock, "cProd");
+
+      if (!name) {
+        return null;
+      }
+
+      const quantity =
+        parseDecimal(getTagValue(prodBlock, "qCom")) ??
+        parseDecimal(getTagValue(prodBlock, "qTrib")) ??
+        1;
+      const unitPrice =
+        parseDecimal(getTagValue(prodBlock, "vUnCom")) ??
+        parseDecimal(getTagValue(prodBlock, "vUnTrib"));
+      const lineAmount =
+        parseDecimal(getTagValue(prodBlock, "vProd")) ??
+        (unitPrice !== undefined ? Number((unitPrice * quantity).toFixed(2)) : undefined);
+
+      if (lineAmount === undefined) {
+        throw new Error(`Nao consegui ler o valor do item ${itemNumber} no XML informado.`);
+      }
+
+      const resolvedUnitPrice =
+        unitPrice ?? Number((lineAmount / Math.max(quantity, 1)).toFixed(4));
+      const productCode = getTagValue(prodBlock, "cProd");
+      const ean =
+        normalizeSkuCandidate(getTagValue(prodBlock, "cEAN")) ??
+        normalizeSkuCandidate(getTagValue(prodBlock, "cEANTrib"));
+      const skuCandidates = Array.from(
+        new Set(
+          [
+            normalizeSkuCandidate(getTagValue(prodBlock, "cEAN")),
+            normalizeSkuCandidate(getTagValue(prodBlock, "cEANTrib")),
+            normalizeSkuCandidate(productCode),
+          ].filter((value): value is string => Boolean(value)),
+        ),
+      );
+
+      return {
+        itemNumber,
+        name,
+        productCode,
+        ean,
+        ncm: getTagValue(prodBlock, "NCM"),
+        cfop: getTagValue(prodBlock, "CFOP"),
+        quantity,
+        unitPrice: resolvedUnitPrice,
+        lineAmount,
+        shippingAmount: parseDecimal(getTagValue(prodBlock, "vFrete")) ?? 0,
+        discountAmount: parseDecimal(getTagValue(prodBlock, "vDesc")) ?? 0,
+        skuCandidates,
+      };
+    })
+    .filter((item): item is ParsedInvoiceXmlItem => item !== null);
+}
+
 export function parseInvoiceXml(xml: string): ParsedInvoiceXml {
   const normalizedXml = xml.replace(/^\uFEFF/, "").trim();
   const infNFeBlock = getElementInner(normalizedXml, "infNFe");
@@ -191,21 +327,11 @@ export function parseInvoiceXml(xml: string): ParsedInvoiceXml {
     .map((value) => parseXmlDate(value))
     .filter((value): value is Date => Boolean(value))
     .sort((left, right) => left.getTime() - right.getTime())[0];
-  const totalTax =
-    parseDecimal(getTagValue(totalsBlock, "vTotTrib")) ??
-    [
-      "vICMS",
-      "vST",
-      "vFCP",
-      "vIPI",
-      "vII",
-      "vPIS",
-      "vCOFINS",
-      "vIOF",
-    ].reduce((sum, tag) => sum + (parseDecimal(getTagValue(totalsBlock, tag)) ?? 0), 0);
+  const totalTax = resolveTotalTax(infNFeBlock, totalsBlock);
   const accessKeyFromId = getElementAttribute(normalizedXml, "infNFe", "Id");
   const accessKey =
     accessKeyFromId?.startsWith("NFe") ? accessKeyFromId.slice(3) : getTagValue(normalizedXml, "chNFe");
+  const items = parseInvoiceItems(infNFeBlock);
 
   return {
     number,
@@ -218,5 +344,6 @@ export function parseInvoiceXml(xml: string): ParsedInvoiceXml {
     amount: requireDecimal(getTagValue(totalsBlock, "vNF"), "o valor total"),
     taxAmount: totalTax > 0 ? totalTax : undefined,
     notes: buildNotes(infNFeBlock),
+    items,
   };
 }

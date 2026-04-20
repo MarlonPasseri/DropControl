@@ -10,6 +10,7 @@ import {
   getInvoiceById,
   updateInvoice,
 } from "@/lib/data/invoices";
+import { syncImportedInvoiceProducts } from "@/lib/invoices/product-links";
 import { parseInvoiceXml } from "@/lib/invoices/xml";
 import { getOrderById } from "@/lib/data/orders";
 import { getSupplierById } from "@/lib/data/suppliers";
@@ -50,11 +51,17 @@ function getRedirectState(input: {
   edit?: string;
   orderId?: string;
   supplierId?: string | null;
+  reportYear?: string;
+  folderYear?: string;
+  folderMonth?: string;
 }) {
   return {
     edit: input.edit,
     order: input.edit ? undefined : input.orderId,
     supplier: input.edit ? undefined : input.supplierId ?? undefined,
+    reportYear: input.reportYear,
+    folderYear: input.folderYear,
+    folderMonth: input.folderMonth,
   };
 }
 
@@ -84,6 +91,9 @@ async function resolveInvoiceRelations(input: {
   edit?: string;
   orderId?: string;
   supplierId?: string | null;
+  reportYear?: string;
+  folderYear?: string;
+  folderMonth?: string;
   type: InvoiceType;
 }) {
   const order = input.orderId ? await getOrderById(input.userId, input.orderId) : null;
@@ -95,15 +105,9 @@ async function resolveInvoiceRelations(input: {
     });
   }
 
-  if (input.type === InvoiceType.SALE && !input.orderId) {
-    invoicesRedirect({
-      error: "Vincule a nota de venda a um pedido.",
-      ...getRedirectState(input),
-    });
-  }
-
   const resolvedSupplierId =
     input.type === InvoiceType.SALE ? null : input.supplierId ?? order?.supplierId ?? null;
+  const productSupplierId = order?.supplierId ?? input.supplierId ?? null;
 
   if (input.type === InvoiceType.PURCHASE && !resolvedSupplierId) {
     invoicesRedirect({
@@ -125,15 +129,15 @@ async function resolveInvoiceRelations(input: {
     });
   }
 
-  if (resolvedSupplierId) {
-    const supplier = await getSupplierById(input.userId, resolvedSupplierId);
+  if (productSupplierId) {
+    const supplier = await getSupplierById(input.userId, productSupplierId);
 
     if (!supplier) {
       invoicesRedirect({
         error: "Selecione um fornecedor valido.",
         ...getRedirectState({
           ...input,
-          supplierId: resolvedSupplierId,
+          supplierId: productSupplierId,
         }),
       });
     }
@@ -142,6 +146,8 @@ async function resolveInvoiceRelations(input: {
   return {
     orderId: input.orderId ?? null,
     supplierId: resolvedSupplierId,
+    productSupplierId,
+    orderProductId: order?.product.id ?? null,
   };
 }
 
@@ -150,11 +156,41 @@ function revalidateInvoiceSurfaces() {
   revalidatePath("/dashboard");
   revalidatePath("/finance");
   revalidatePath("/orders");
+  revalidatePath("/products");
   revalidatePath("/suppliers");
+}
+
+function buildXmlImportSuccessMessage(summary: {
+  linkedItems: number;
+  createdProducts: number;
+  skippedItems: number;
+}) {
+  const message = ["XML importado com sucesso."];
+
+  if (summary.linkedItems > 0) {
+    if (summary.createdProducts > 0) {
+      message.push(
+        `${summary.createdProducts} produto(s) criado(s) automaticamente e ${summary.linkedItems} item(ns) vinculado(s) a nota.`,
+      );
+    } else {
+      message.push(`${summary.linkedItems} item(ns) vinculado(s) a produto(s) existente(s).`);
+    }
+  }
+
+  if (summary.skippedItems > 0) {
+    message.push(
+      `${summary.skippedItems} item(ns) ficaram sem produto automatico porque nao foi encontrada uma correspondencia valida no cadastro.`,
+    );
+  }
+
+  return message.join(" ");
 }
 
 export async function saveInvoice(formData: FormData) {
   const user = await requireUser();
+  const reportYear = readTextEntry(formData, "reportYear");
+  const folderYear = readTextEntry(formData, "folderYear");
+  const folderMonth = readTextEntry(formData, "folderMonth");
   const parsed = invoiceSchema.safeParse({
     id: formData.get("id"),
     orderId: formData.get("orderId"),
@@ -181,6 +217,9 @@ export async function saveInvoice(formData: FormData) {
           typeof formData.get("supplierId") === "string"
             ? (formData.get("supplierId") as string)
             : undefined,
+        reportYear,
+        folderYear,
+        folderMonth,
       }),
     });
   }
@@ -196,6 +235,9 @@ export async function saveInvoice(formData: FormData) {
         edit: data.id,
         orderId: data.orderId,
         supplierId: data.supplierId,
+        reportYear,
+        folderYear,
+        folderMonth,
       }),
     });
   }
@@ -207,6 +249,9 @@ export async function saveInvoice(formData: FormData) {
         edit: data.id,
         orderId: data.orderId,
         supplierId: data.supplierId,
+        reportYear,
+        folderYear,
+        folderMonth,
       }),
     });
   }
@@ -216,6 +261,9 @@ export async function saveInvoice(formData: FormData) {
     edit: data.id,
     orderId: data.orderId,
     supplierId: data.supplierId,
+    reportYear,
+    folderYear,
+    folderMonth,
     type: data.type,
   });
 
@@ -223,7 +271,12 @@ export async function saveInvoice(formData: FormData) {
     const existingInvoice = await getInvoiceById(user.id, data.id);
 
     if (!existingInvoice) {
-      invoicesRedirect({ error: "Nota fiscal nao encontrada." });
+      invoicesRedirect({
+        error: "Nota fiscal nao encontrada.",
+        reportYear,
+        folderYear,
+        folderMonth,
+      });
     }
 
     await updateInvoice(data.id, {
@@ -245,6 +298,9 @@ export async function saveInvoice(formData: FormData) {
     invoicesRedirect({
       success: "Nota fiscal atualizada com sucesso.",
       edit: data.id,
+      reportYear,
+      folderYear,
+      folderMonth,
     });
   }
 
@@ -268,6 +324,9 @@ export async function saveInvoice(formData: FormData) {
   invoicesRedirect({
     success: "Nota fiscal criada com sucesso.",
     edit: invoice.id,
+    reportYear,
+    folderYear,
+    folderMonth,
   });
 }
 
@@ -275,31 +334,36 @@ export async function importInvoiceXml(formData: FormData) {
   const user = await requireUser();
   const orderId = readTextEntry(formData, "orderId");
   const supplierId = readTextEntry(formData, "supplierId");
+  const reportYear = readTextEntry(formData, "reportYear");
+  const folderYear = readTextEntry(formData, "folderYear");
+  const folderMonth = readTextEntry(formData, "folderMonth");
   const xmlFile = formData.get("xmlFile");
 
   if (!isUploadedFile(xmlFile) || xmlFile.size === 0) {
     invoicesRedirect({
       error: "Selecione um arquivo XML para importar.",
-      ...getRedirectState({ orderId, supplierId }),
+      ...getRedirectState({ orderId, supplierId, reportYear, folderYear, folderMonth }),
     });
   }
 
   if (xmlFile.size > 5 * 1024 * 1024) {
     invoicesRedirect({
       error: "O XML precisa ter ate 5 MB.",
-      ...getRedirectState({ orderId, supplierId }),
+      ...getRedirectState({ orderId, supplierId, reportYear, folderYear, folderMonth }),
     });
   }
 
   let parsedInvoice: ReturnType<typeof parseInvoiceXml>;
+  let xmlContent = "";
 
   try {
-    parsedInvoice = parseInvoiceXml(await xmlFile.text());
+    xmlContent = await xmlFile.text();
+    parsedInvoice = parseInvoiceXml(xmlContent);
   } catch (error) {
     invoicesRedirect({
       error:
         error instanceof Error ? error.message : "Nao consegui importar o XML da nota fiscal.",
-      ...getRedirectState({ orderId, supplierId }),
+      ...getRedirectState({ orderId, supplierId, reportYear, folderYear, folderMonth }),
     });
   }
 
@@ -310,6 +374,9 @@ export async function importInvoiceXml(formData: FormData) {
       invoicesRedirect({
         error: "Ja existe uma nota fiscal cadastrada com essa chave de acesso.",
         edit: existingInvoice.id,
+        reportYear,
+        folderYear,
+        folderMonth,
       });
     }
   }
@@ -318,6 +385,9 @@ export async function importInvoiceXml(formData: FormData) {
     userId: user.id,
     orderId,
     supplierId,
+    reportYear,
+    folderYear,
+    folderMonth,
     type: parsedInvoice.type,
   });
   const notes = [parsedInvoice.notes, `Arquivo: ${xmlFile.name}`]
@@ -336,31 +406,61 @@ export async function importInvoiceXml(formData: FormData) {
     dueDate: parsedInvoice.dueDate ?? null,
     amount: parsedInvoice.amount,
     taxAmount: parsedInvoice.taxAmount ?? null,
+    xmlFileName: xmlFile.name,
+    xmlContent,
     notes: notes || undefined,
+  });
+  const productSummary = await syncImportedInvoiceProducts({
+    userId: user.id,
+    invoiceId: invoice.id,
+    parsedInvoice,
+    productSupplierId: relations.productSupplierId,
+    fallbackProductId: relations.orderProductId,
   });
 
   revalidateInvoiceSurfaces();
   invoicesRedirect({
-    success: "XML importado com sucesso.",
+    success: buildXmlImportSuccessMessage(productSummary),
     edit: invoice.id,
+    reportYear,
+    folderYear,
+    folderMonth,
   });
 }
 
 export async function removeInvoice(formData: FormData) {
   const user = await requireUser();
   const invoiceId = `${formData.get("id") ?? ""}`.trim();
+  const reportYear = readTextEntry(formData, "reportYear");
+  const folderYear = readTextEntry(formData, "folderYear");
+  const folderMonth = readTextEntry(formData, "folderMonth");
 
   if (!invoiceId) {
-    invoicesRedirect({ error: "Nota fiscal invalida." });
+    invoicesRedirect({
+      error: "Nota fiscal invalida.",
+      reportYear,
+      folderYear,
+      folderMonth,
+    });
   }
 
   const existingInvoice = await getInvoiceById(user.id, invoiceId);
 
   if (!existingInvoice) {
-    invoicesRedirect({ error: "Nota fiscal nao encontrada." });
+    invoicesRedirect({
+      error: "Nota fiscal nao encontrada.",
+      reportYear,
+      folderYear,
+      folderMonth,
+    });
   }
 
   await deleteInvoice(invoiceId);
   revalidateInvoiceSurfaces();
-  invoicesRedirect({ success: "Nota fiscal removida com sucesso." });
+  invoicesRedirect({
+    success: "Nota fiscal removida com sucesso.",
+    reportYear,
+    folderYear,
+    folderMonth,
+  });
 }

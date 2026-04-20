@@ -80,6 +80,7 @@ export type FinanceEntryRecord = {
 
 export const navigationItems: NavigationItem[] = [
   { href: "/dashboard", label: "Dashboard", shortLabel: "Dash", accent: "bg-teal-500" },
+  { href: "/integrations", label: "Integracoes", shortLabel: "Apps", accent: "bg-fuchsia-500" },
   { href: "/products", label: "Produtos", shortLabel: "Prod", accent: "bg-blue-500" },
   { href: "/suppliers", label: "Fornecedores", shortLabel: "Forn", accent: "bg-amber-500" },
   { href: "/orders", label: "Pedidos", shortLabel: "Peds", accent: "bg-rose-500" },

@@ -6,6 +6,7 @@ import { navigationItems } from "@/lib/mvp-data";
 
 const iconMap: Record<string, string> = {
   "/dashboard": "dashboard",
+  "/integrations": "hub",
   "/products": "inventory_2",
   "/suppliers": "local_shipping",
   "/orders": "receipt_long",

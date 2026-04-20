@@ -34,6 +34,7 @@ export async function getProductsByUser(userId: string, filters: ProductFilters 
       _count: {
         select: {
           orders: true,
+          invoiceItems: true,
           tasks: true,
         },
       },
@@ -155,6 +156,7 @@ export async function canDeleteProduct(userId: string, productId: string) {
       _count: {
         select: {
           orders: true,
+          invoiceItems: true,
         },
       },
     },
@@ -164,5 +166,5 @@ export async function canDeleteProduct(userId: string, productId: string) {
     return false;
   }
 
-  return product._count.orders === 0;
+  return product._count.orders === 0 && product._count.invoiceItems === 0;
 }
