@@ -13,7 +13,7 @@ Sistema operacional para dropshipping com autenticacao, cadastros, pedidos, tare
 
 ## O que ja esta pronto
 
-- autenticacao com Auth.js Credentials
+- autenticacao com Auth.js Credentials e Google OAuth
 - layout privado com sidebar e fluxo protegido por proxy
 - CRUD real de produtos, fornecedores, pedidos, tarefas e lancamentos financeiros
 - dashboard com alertas, pedidos criticos e lucro mensal ajustado pelo financeiro
@@ -85,6 +85,14 @@ Preencha principalmente:
 
 - `DATABASE_URL`
 - `AUTH_SECRET`
+- `AUTH_GOOGLE_ID`
+- `AUTH_GOOGLE_SECRET`
+
+No Google Cloud Console, cadastre a URL de redirecionamento local:
+
+```bash
+http://localhost:3000/api/auth/callback/google
+```
 
 ## Scripts uteis
 

@@ -23,13 +23,13 @@ export async function getUserCount() {
 export async function createUser(input: {
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string | null;
 }) {
   return prisma.user.create({
     data: {
       name: input.name,
       email: input.email.trim().toLowerCase(),
-      passwordHash: input.passwordHash,
+      passwordHash: input.passwordHash ?? null,
     },
   });
 }

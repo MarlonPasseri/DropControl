@@ -81,6 +81,12 @@ export async function authenticate(
   return initialFormState;
 }
 
+export async function authenticateWithGoogle(formData: FormData) {
+  await signIn("google", {
+    redirectTo: resolveRedirectTarget(`${formData.get("redirectTo") ?? ""}`),
+  });
+}
+
 export async function registerOperator(
   _prevState: FormState,
   formData: FormData,

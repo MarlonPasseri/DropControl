@@ -7,6 +7,9 @@ import { getUserCount } from "@/lib/data/users";
 
 export default async function LoginPage() {
   const [session, totalUsers] = await Promise.all([auth(), getUserCount()]);
+  const isGoogleAuthEnabled = Boolean(
+    process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET,
+  );
 
   if (session?.user) {
     redirect("/dashboard");
@@ -86,7 +89,7 @@ export default async function LoginPage() {
                 </p>
               </div>
 
-              <LoginForm />
+              <LoginForm isGoogleAuthEnabled={isGoogleAuthEnabled} />
             </div>
 
             <div className="rounded-lg border border-[var(--surface-container-highest)] bg-[var(--surface-container-low)] p-6 shadow-[0_14px_32px_rgba(31,45,40,0.06)]">
