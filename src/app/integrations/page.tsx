@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { SalesChannelStatus } from "@prisma/client";
 import { disconnectTikTokShop, syncTikTokShop } from "@/app/integrations/actions";
 import { AppShell } from "@/components/app-shell";
@@ -158,12 +157,12 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link
+                <a
                   href="/api/integrations/tiktok/connect"
                   className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-[0_16px_30px_rgba(255,255,255,0.14)]"
                 >
                   {connectionReady ? "Reconectar conta" : "Conectar TikTok Shop"}
-                </Link>
+                </a>
 
                 <form action={disconnectTikTokShop}>
                   <button

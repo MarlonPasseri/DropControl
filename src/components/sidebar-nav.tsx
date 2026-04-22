@@ -19,7 +19,7 @@ export function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mt-8 flex-1 space-y-1 px-4">
+    <nav className="mt-6 flex-1 space-y-1 px-3">
       {navigationItems.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -27,9 +27,9 @@ export function SidebarNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 rounded-lg px-3 py-3 font-headline text-sm font-semibold tracking-wide transition-all duration-200 ${
+            className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
               active
-                ? "bg-[var(--primary-container)] text-[var(--on-primary-container)] shadow-[inset_0_0_0_1px_rgba(31,107,102,0.10)]"
+                ? "bg-[var(--surface-container-low)] text-slate-950 shadow-[inset_3px_0_0_var(--primary)]"
                 : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-slate-900"
             }`}
           >

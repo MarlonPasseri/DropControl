@@ -92,7 +92,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       label: "Faturamento do mes",
       value: formatCurrency(dashboard.metrics.revenueMonth),
       note: "Volume acumulado no periodo",
-      accent: "blue" as const,
+      accent: "teal" as const,
     },
     {
       label: "Lucro estimado",
@@ -174,30 +174,22 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
         <AppPanel title="Centro de alertas" eyebrow="Motor do MVP">
           <div className="grid gap-3 sm:grid-cols-4">
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">
-                Alta
-              </p>
+            <div className="rounded-lg border border-[var(--outline-variant)] border-l-4 border-l-[var(--error)] bg-white px-4 py-3">
+              <p className="text-sm font-medium text-[var(--on-surface-variant)]">Alta</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{alertCenter.summary.high}</p>
             </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
-                Media
-              </p>
+            <div className="rounded-lg border border-[var(--outline-variant)] border-l-4 border-l-[var(--warning)] bg-white px-4 py-3">
+              <p className="text-sm font-medium text-[var(--on-surface-variant)]">Media</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">
                 {alertCenter.summary.medium}
               </p>
             </div>
-            <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-                Baixa
-              </p>
+            <div className="rounded-lg border border-[var(--outline-variant)] border-l-4 border-l-[var(--primary)] bg-white px-4 py-3">
+              <p className="text-sm font-medium text-[var(--on-surface-variant)]">Baixa</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{alertCenter.summary.low}</p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-                Total
-              </p>
+            <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3">
+              <p className="text-sm font-medium text-[var(--on-surface-variant)]">Total</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">
                 {alertCenter.summary.total}
               </p>
@@ -212,7 +204,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   alertFilter === option.value || (!alertFilter && !option.value)
                     ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+                    : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                 }`}
               >
                 {option.label} ({option.count})
@@ -245,9 +237,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           {dashboard.criticalOrders.length === 0 ? (
             <EmptyHint text="Nenhum pedido em atraso ou problema no momento." />
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <div className="overflow-x-auto rounded-lg border border-[var(--outline-variant)]">
               <table className="min-w-[680px] divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-slate-500">
+                <thead className="bg-[var(--surface-container-low)] text-left text-slate-600">
                   <tr>
                     <th className="px-4 py-3 font-medium">Pedido</th>
                     <th className="px-4 py-3 font-medium">Cliente</th>
@@ -292,7 +284,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           ) : (
             <div className="space-y-3">
               {dashboard.tasksToday.map((task) => (
-                <div key={task.id} className="rounded-lg border border-slate-200 p-4">
+                <div key={task.id} className="rounded-lg border border-[var(--outline-variant)] bg-white p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm font-semibold text-slate-950">{task.title}</h3>
                     <StatusPill label={getTaskPriorityLabel(task.priority)} />
@@ -323,7 +315,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               {dashboard.topProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="grid gap-4 rounded-lg border border-slate-200 p-4 md:grid-cols-[minmax(0,1fr)_140px]"
+                  className="grid gap-4 rounded-lg border border-[var(--outline-variant)] bg-white p-4 md:grid-cols-[minmax(0,1fr)_140px]"
                 >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">

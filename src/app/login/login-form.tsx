@@ -48,7 +48,7 @@ export function LoginForm({
         <button
           type="submit"
           disabled={!isGoogleAuthEnabled}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-[var(--surface-container-highest)] bg-white px-4 py-4 text-sm font-semibold text-slate-900 shadow-[0_10px_24px_rgba(31,45,40,0.06)] transition hover:bg-[var(--surface-container-lowest)] disabled:cursor-not-allowed disabled:bg-[var(--surface-container-low)] disabled:text-slate-400"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-[var(--surface-container-lowest)] disabled:cursor-not-allowed disabled:bg-[var(--surface-container-low)] disabled:text-slate-400"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-base font-bold text-[#4285f4]">
             G
@@ -96,7 +96,7 @@ export function LoginForm({
               maxLength={320}
               spellCheck={false}
               placeholder="operador@dropshipcontrol.com"
-              className="w-full rounded-lg border border-transparent bg-[var(--surface-container-low)] py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
+              className="w-full rounded-lg border border-[var(--outline-variant)] bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
             />
           </div>
         </label>
@@ -117,7 +117,7 @@ export function LoginForm({
               maxLength={72}
               autoComplete="current-password"
               placeholder="Digite sua senha"
-              className="w-full rounded-lg border border-transparent bg-[var(--surface-container-low)] py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
+              className="w-full rounded-lg border border-[var(--outline-variant)] bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] transition focus:border-[var(--primary)]"
             />
           </div>
         </label>
@@ -131,7 +131,7 @@ export function LoginForm({
         <button
           type="submit"
           disabled={isPending}
-          className="signature-gradient w-full rounded-lg px-4 py-4 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-[var(--primary)] px-4 py-3.5 text-sm font-semibold text-[var(--on-primary)] transition hover:bg-[var(--primary-dim)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isPending ? "Entrando..." : "Entrar"}
         </button>

@@ -270,14 +270,30 @@ function buildAbsoluteUrl(baseUrl: string, pathOrUrl: string) {
   return `${baseUrl}${pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`}`;
 }
 
+function buildTikTokApiSignature(input: {
+  path: string;
+  searchParams: URLSearchParams;
+  body?: string;
+  appSecret: string;
+}) {
+  const normalizedParams = Array.from(input.searchParams.entries())
+    .filter(([key]) => key !== "sign" && key !== "access_token")
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}${value}`)
+    .join("");
+  const payload = `${input.appSecret}${input.path}${normalizedParams}${
+    input.body ?? ""
+  }${input.appSecret}`;
+
+  return createHmac("sha256", input.appSecret).update(payload).digest("hex");
+}
+
 async function parseJsonResponse(response: Response) {
-  const contentType = response.headers.get("content-type") ?? "";
-
-  if (contentType.includes("application/json")) {
-    return response.json();
-  }
-
   const text = await response.text();
+
+  if (!text.trim()) {
+    return {};
+  }
 
   try {
     return JSON.parse(text);
@@ -286,12 +302,29 @@ async function parseJsonResponse(response: Response) {
   }
 }
 
+function resolveTokenExpiry(value: number | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  const tenYearsInSeconds = 10 * 365 * 24 * 60 * 60;
+  const expiresAtSeconds =
+    value > nowInSeconds + tenYearsInSeconds ? value : nowInSeconds + value;
+
+  return new Date(expiresAtSeconds * 1000);
+}
+
 function extractTokenEnvelope(payload: unknown) {
   if (!isRecord(payload)) {
     return undefined;
   }
 
   const data = isRecord(payload.data) ? payload.data : payload;
+
+  const grantedScopes = Array.isArray(data.granted_scopes)
+    ? data.granted_scopes.filter((scope): scope is string => typeof scope === "string")
+    : undefined;
 
   return {
     accessToken: pickString(data, ["access_token", "accessToken", "token"]),
@@ -306,8 +339,8 @@ function extractTokenEnvelope(payload: unknown) {
     shopCipher: pickString(data, ["shop_cipher", "shopCipher"]),
     shopCode: pickString(data, ["shop_code", "shopCode"]),
     shopName: pickString(data, ["shop_name", "shopName", "seller_name", "shop.name"]),
-    shopRegion: pickString(data, ["shop_region", "shopRegion", "region"]),
-    scopes: pickString(data, ["scope", "scopes"]),
+    shopRegion: pickString(data, ["shop_region", "shopRegion", "seller_base_region", "region"]),
+    scopes: grantedScopes?.join(",") ?? pickString(data, ["scope", "scopes"]),
     rawPayload: data,
   };
 }
@@ -315,22 +348,39 @@ function extractTokenEnvelope(payload: unknown) {
 async function tryTokenExchange(
   tokenUrl: string,
   payload: Record<string, string>,
-  asForm = false,
+  mode: "json" | "form" | "query" = "json",
 ) {
-  const body = asForm ? new URLSearchParams(payload) : JSON.stringify(payload);
-  const response = await fetch(tokenUrl, {
-    method: "POST",
+  const url = new URL(tokenUrl);
+  const isQueryMode = mode === "query";
+  const body =
+    mode === "form"
+      ? new URLSearchParams(payload)
+      : mode === "json"
+        ? JSON.stringify(payload)
+        : undefined;
+
+  if (isQueryMode) {
+    for (const [key, value] of Object.entries(payload)) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  const response = await fetch(url.toString(), {
+    method: isQueryMode ? "GET" : "POST",
     headers: {
-      "Content-Type": asForm ? "application/x-www-form-urlencoded" : "application/json",
+      "Content-Type":
+        mode === "form" ? "application/x-www-form-urlencoded" : "application/json",
       Accept: "application/json",
     },
     body,
   });
   const responseBody = await parseJsonResponse(response);
 
-  if (!response.ok) {
+  const responseCode = pickNumber(responseBody, ["code"]);
+
+  if (!response.ok || (responseCode !== undefined && responseCode !== 0)) {
     throw new Error(
-      pickString(responseBody, ["message", "error.message", "error", "raw"]) ??
+      pickString(responseBody, ["message", "error.message", "data.message", "error", "raw"]) ??
         "Falha ao trocar o codigo do TikTok Shop por token.",
     );
   }
@@ -368,18 +418,23 @@ async function exchangeAuthCodeForTokens(input: {
   ];
 
   let lastError: Error | undefined;
+  const tokenUrls = Array.from(
+    new Set([config.tokenUrl, "https://auth.tiktok-shops.com/api/v2/token/get"].filter(Boolean)),
+  ) as string[];
 
-  for (const attempt of attempts) {
-    for (const asForm of [false, true]) {
-      try {
-        const response = await tryTokenExchange(config.tokenUrl, attempt, asForm);
-        const envelope = extractTokenEnvelope(response);
+  for (const tokenUrl of tokenUrls) {
+    for (const attempt of attempts) {
+      for (const mode of ["json", "form", "query"] as const) {
+        try {
+          const response = await tryTokenExchange(tokenUrl, attempt, mode);
+          const envelope = extractTokenEnvelope(response);
 
-        if (envelope?.accessToken) {
-          return envelope;
+          if (envelope?.accessToken) {
+            return envelope;
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(buildAuthErrorMessage(error));
         }
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(buildAuthErrorMessage(error));
       }
     }
   }
@@ -426,40 +481,47 @@ async function refreshTokensForConnection(connectionId: string) {
   ];
 
   let lastError: Error | undefined;
+  const tokenUrls = Array.from(
+    new Set([
+      config.tokenUrl,
+      "https://auth.tiktok-shops.com/api/v2/token/refresh",
+    ].filter(Boolean)),
+  ) as string[];
 
-  for (const attempt of attempts) {
-    for (const asForm of [false, true]) {
-      try {
-        const response = await tryTokenExchange(config.tokenUrl, attempt, asForm);
-        const envelope = extractTokenEnvelope(response);
+  for (const tokenUrl of tokenUrls) {
+    for (const attempt of attempts) {
+      for (const mode of ["json", "form", "query"] as const) {
+        try {
+          const response = await tryTokenExchange(tokenUrl, attempt, mode);
+          const envelope = extractTokenEnvelope(response);
 
-        if (!envelope?.accessToken) {
-          continue;
+          if (!envelope?.accessToken) {
+            continue;
+          }
+
+          const updatedConnection = await prisma.salesChannelConnection.update({
+            where: {
+              id: connection.id,
+            },
+            data: {
+              accessToken: encryptSecret(envelope.accessToken),
+              refreshToken: envelope.refreshToken
+                ? encryptSecret(envelope.refreshToken)
+                : connection.refreshToken,
+              accessTokenExpiresAt:
+                resolveTokenExpiry(envelope.expiresIn) ?? connection.accessTokenExpiresAt,
+              refreshTokenExpiresAt:
+                resolveTokenExpiry(envelope.refreshExpiresIn) ??
+                connection.refreshTokenExpiresAt,
+              status: SalesChannelStatus.ACTIVE,
+              lastError: null,
+            },
+          });
+
+          return updatedConnection;
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(buildAuthErrorMessage(error));
         }
-
-        const updatedConnection = await prisma.salesChannelConnection.update({
-          where: {
-            id: connection.id,
-          },
-          data: {
-            accessToken: encryptSecret(envelope.accessToken),
-            refreshToken: envelope.refreshToken
-              ? encryptSecret(envelope.refreshToken)
-              : connection.refreshToken,
-            accessTokenExpiresAt: envelope.expiresIn
-              ? new Date(Date.now() + envelope.expiresIn * 1000)
-              : connection.accessTokenExpiresAt,
-            refreshTokenExpiresAt: envelope.refreshExpiresIn
-              ? new Date(Date.now() + envelope.refreshExpiresIn * 1000)
-              : connection.refreshTokenExpiresAt,
-            status: SalesChannelStatus.ACTIVE,
-            lastError: null,
-          },
-        });
-
-        return updatedConnection;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(buildAuthErrorMessage(error));
       }
     }
   }
@@ -505,21 +567,38 @@ async function ensureFreshConnectionToken(connectionId: string) {
 async function fetchTikTokApiJson(input: {
   connectionId: string;
   path: string;
+  method?: "GET" | "POST";
   query?: Record<string, string | number | undefined>;
+  body?: Record<string, unknown>;
 }) {
   const config = getTikTokShopConfig();
 
-  if (!config.apiBaseUrl) {
+  if (!config.apiBaseUrl || !config.appKey || !config.appSecret) {
     throw new Error("Defina TIKTOK_SHOP_API_BASE_URL para sincronizar com o TikTok Shop.");
   }
 
-  const { accessToken } = await ensureFreshConnectionToken(input.connectionId);
+  const { connection, accessToken } = await ensureFreshConnectionToken(input.connectionId);
 
   if (!accessToken) {
     throw new Error("Nao existe access token ativo para a conexao do TikTok Shop.");
   }
 
+  const method = input.method ?? "GET";
+  const timestamp = Math.floor(Date.now() / 1000);
   const url = new URL(buildAbsoluteUrl(config.apiBaseUrl, input.path));
+  const bodyText = input.body ? JSON.stringify(input.body) : undefined;
+
+  url.searchParams.set("app_key", config.appKey);
+  url.searchParams.set("timestamp", String(timestamp));
+  url.searchParams.set("access_token", accessToken);
+
+  if (connection.shopCipher) {
+    url.searchParams.set("shop_cipher", connection.shopCipher);
+  }
+
+  if (connection.shopId) {
+    url.searchParams.set("shop_id", connection.shopId);
+  }
 
   for (const [key, value] of Object.entries(input.query ?? {})) {
     if (value !== undefined) {
@@ -527,20 +606,34 @@ async function fetchTikTokApiJson(input: {
     }
   }
 
+  url.searchParams.set(
+    "sign",
+    buildTikTokApiSignature({
+      path: url.pathname,
+      searchParams: url.searchParams,
+      body: bodyText,
+      appSecret: config.appSecret,
+    }),
+  );
+
   const response = await fetch(url.toString(), {
+    method,
     headers: {
       Accept: "application/json",
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
       "x-tts-access-token": accessToken,
-      ...(config.appKey ? { "x-tts-app-key": config.appKey } : {}),
+      "x-tts-app-key": config.appKey,
     },
+    body: method === "POST" ? bodyText ?? "{}" : undefined,
     cache: "no-store",
   });
   const payload = await parseJsonResponse(response);
+  const responseCode = pickNumber(payload, ["code"]);
 
-  if (!response.ok) {
+  if (!response.ok || (responseCode !== undefined && responseCode !== 0)) {
     throw new Error(
-      pickString(payload, ["message", "error.message", "error", "raw"]) ??
+      pickString(payload, ["message", "error.message", "data.message", "error", "raw"]) ??
         "Falha ao consultar o TikTok Shop.",
     );
   }
@@ -1214,6 +1307,10 @@ async function syncTikTokProducts(connectionId: string, userId: string) {
   const payload = await fetchTikTokApiJson({
     connectionId,
     path: config.productsPath,
+    method: "POST",
+    body: {
+      page_size: 50,
+    },
   });
   const products = normalizeTikTokProducts(payload);
   const supplier = await ensureTikTokSupplier(userId, connection.shopName);
@@ -1274,6 +1371,10 @@ async function syncTikTokOrders(connectionId: string, userId: string) {
   const payload = await fetchTikTokApiJson({
     connectionId,
     path: config.ordersPath,
+    method: "POST",
+    body: {
+      page_size: 50,
+    },
   });
   const orders = normalizeTikTokOrders(payload);
   const supplier = await ensureTikTokSupplier(userId, connection.shopName);
@@ -1585,12 +1686,8 @@ export async function completeTikTokAuthorization(request: Request) {
       refreshToken: tokenEnvelope.refreshToken
         ? encryptSecret(tokenEnvelope.refreshToken)
         : null,
-      accessTokenExpiresAt: tokenEnvelope.expiresIn
-        ? new Date(Date.now() + tokenEnvelope.expiresIn * 1000)
-        : null,
-      refreshTokenExpiresAt: tokenEnvelope.refreshExpiresIn
-        ? new Date(Date.now() + tokenEnvelope.refreshExpiresIn * 1000)
-        : null,
+      accessTokenExpiresAt: resolveTokenExpiry(tokenEnvelope.expiresIn),
+      refreshTokenExpiresAt: resolveTokenExpiry(tokenEnvelope.refreshExpiresIn),
       shopId: tokenEnvelope.shopId ?? connection.shopId,
       shopCipher:
         tokenEnvelope.shopCipher ??
@@ -1711,6 +1808,32 @@ export async function runTikTokManualSync(input: {
 }
 
 function verifyWebhookSignature(rawBody: string, signature: string, secret: string) {
+  if (signature.includes("t=") && signature.includes("s=")) {
+    const parts = Object.fromEntries(
+      signature.split(",").map((part) => {
+        const [key, ...value] = part.split("=");
+        return [key.trim(), value.join("=").trim()];
+      }),
+    );
+    const timestamp = parts.t;
+    const receivedSignature = parts.s;
+
+    if (!timestamp || !receivedSignature) {
+      return false;
+    }
+
+    const expectedSignature = createHmac("sha256", secret)
+      .update(`${timestamp}.${rawBody}`)
+      .digest("hex");
+    const expectedBuffer = Buffer.from(expectedSignature);
+    const receivedBuffer = Buffer.from(receivedSignature);
+
+    return (
+      expectedBuffer.length === receivedBuffer.length &&
+      timingSafeEqual(expectedBuffer, receivedBuffer)
+    );
+  }
+
   const hexDigest = createHmac("sha256", secret).update(rawBody).digest("hex");
   const base64Digest = createHmac("sha256", secret).update(rawBody).digest("base64");
   const normalizedSignature = signature.trim();
@@ -1780,6 +1903,7 @@ export async function handleTikTokWebhook(input: {
 }) {
   const config = getTikTokShopConfig();
   const signature =
+    input.headers.get("tiktok-signature") ??
     input.headers.get("x-tts-signature") ??
     input.headers.get("x-tiktok-shop-signature") ??
     input.headers.get("x-signature");
@@ -1790,7 +1914,21 @@ export async function handleTikTokWebhook(input: {
     }
   }
 
-  const payload = JSON.parse(input.rawBody) as unknown;
+  if (!input.rawBody.trim()) {
+    return {
+      processed: 0,
+      message: "Webhook recebido sem corpo para processar.",
+    };
+  }
+
+  let payload: unknown;
+
+  try {
+    payload = JSON.parse(input.rawBody) as unknown;
+  } catch {
+    throw new Error("Webhook do TikTok Shop recebeu um JSON invalido.");
+  }
+
   const shopIdentifier =
     pickString(payload, ["shop_id", "data.shop_id", "shopId"]) ??
     pickString(payload, ["shop_cipher", "data.shop_cipher", "shopCipher"]);

@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import type { ReactNode } from "react";
 import { OrderStatus } from "@prisma/client";
 import {
   changeOrderStatus,
@@ -89,6 +90,29 @@ function parseDateInput(value: string | undefined, endOfDay = false) {
   return date;
 }
 
+const inputClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] focus:border-[var(--primary)]";
+const selectClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm text-slate-900 outline-none ring-0 focus:border-[var(--primary)]";
+const labelClass = "mb-2 block text-sm font-medium text-slate-700";
+
+function FormSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <fieldset className="col-span-full grid gap-4 border-t border-[var(--outline-variant)] pt-5 md:grid-cols-2">
+      <legend className="mb-1 pr-3 font-headline text-sm font-bold text-slate-950">
+        {title}
+      </legend>
+      {children}
+    </fieldset>
+  );
+}
+
 export default async function OrdersPage({ searchParams }: PageProps) {
   const user = await requireUser();
   const params = (await searchParams) ?? {};
@@ -138,7 +162,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
       label: "Com problema",
       value: `${metrics.problemCount}`,
       note: "Exigem tratativa",
-      accent: "blue" as const,
+      accent: "rose" as const,
     },
     {
       label: "Entregues hoje",
@@ -162,7 +186,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
       {successMessage ? <NoticeBanner tone="success" text={successMessage} /> : null}
       {errorMessage ? <NoticeBanner tone="error" text={errorMessage} /> : null}
 
-      <AppPanel title="Filtro de operacao" eyebrow="Priorizar atendimento">
+      <AppPanel title="Filtros" eyebrow="Priorizar atendimento">
         <div className="flex flex-col gap-4">
           <form
             className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto_auto]"
@@ -173,31 +197,31 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por pedido, cliente, produto ou fornecedor"
-              className="min-w-0 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={inputClass}
             />
             <input
               type="date"
               name="from"
               defaultValue={fromParam ?? ""}
-              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={inputClass}
             />
             <input
               type="date"
               name="to"
               defaultValue={toParam ?? ""}
-              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={inputClass}
             />
             {statusFilter ? <input type="hidden" name="status" value={statusFilter} /> : null}
             <button
               type="submit"
-              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+              className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-dim)]"
             >
               Filtrar
             </button>
             {(query || statusFilter || fromParam || toParam || editId) && (
               <Link
                 href="/orders"
-                className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-center text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
               >
                 Limpar
               </Link>
@@ -214,7 +238,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               className={`rounded-md border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+                  : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
               }`}
             >
               Todos
@@ -230,7 +254,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 className={`rounded-md border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
                     ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+                    : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                 }`}
               >
                 {option.label}
@@ -251,14 +275,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 success: undefined,
                 error: undefined,
               })}
-              className="signature-gradient rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.14)]"
+              className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)] hover:bg-[var(--primary-dim)]"
             >
               Novo pedido
             </Link>
           }
         >
           {orders.length === 0 ? (
-            <EmptyHint text="Nenhum pedido encontrado. Cadastre produtos e fornecedores para abrir o fluxo operacional." />
+            <EmptyHint text="Nenhum pedido encontrado. Crie o primeiro pedido para abrir o fluxo operacional." />
           ) : (
             <div className="space-y-4">
               <ResultSummary
@@ -267,9 +291,9 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 endIndex={paginatedOrders.endIndex}
                 totalItems={paginatedOrders.totalItems}
               />
-              <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <div className="overflow-x-auto rounded-lg border border-[var(--outline-variant)]">
               <table className="min-w-[980px] divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-slate-500">
+                <thead className="bg-[var(--surface-container-low)] text-left text-slate-600">
                   <tr>
                     <th className="px-4 py-3 font-medium">Pedido</th>
                     <th className="px-4 py-3 font-medium">Cliente</th>
@@ -281,7 +305,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
                   {paginatedOrders.items.map((order) => (
-                    <tr key={order.id}>
+                    <tr key={order.id} className="odd:bg-white even:bg-slate-50/55 hover:bg-[var(--surface-container-low)]">
                       <td className="px-4 py-4 align-top">
                         <Link
                           href={buildQueryString(params, {
@@ -289,7 +313,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                             success: undefined,
                             error: undefined,
                           })}
-                          className="block rounded-lg transition hover:bg-slate-50"
+                          className="block rounded-lg transition hover:text-[var(--primary)]"
                         >
                           <p className="font-medium text-slate-950">{order.orderNumber}</p>
                           <p className="mt-1 text-slate-500">{formatDate(order.purchaseDate)}</p>
@@ -326,7 +350,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                           <select
                             name="status"
                             defaultValue={order.status}
-                            className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none"
+                            className="w-full rounded-md border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-[var(--primary)]"
                           >
                             {orderStatusOptions.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -336,7 +360,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                           </select>
                           <button
                             type="submit"
-                            className="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700"
+                            className="rounded-md border border-[var(--outline-variant)] bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
                           >
                             Atualizar
                           </button>
@@ -365,7 +389,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
         <div className="space-y-6">
           <AppPanel
             title={selectedOrder ? "Editar pedido" : "Novo pedido"}
-            eyebrow="Formulario real"
+            eyebrow="Dados operacionais"
           >
             {products.length === 0 || suppliers.length === 0 ? (
               <EmptyHint text="Cadastre pelo menos um fornecedor e um produto antes de criar pedidos." />
@@ -373,8 +397,9 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               <form action={saveOrder} className="grid gap-4 md:grid-cols-2">
                 {selectedOrder ? <input type="hidden" name="id" value={selectedOrder.id} /> : null}
 
+                <FormSection title="Dados do pedido">
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Numero do pedido
                   </span>
                   <input
@@ -382,12 +407,12 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="orderNumber"
                     required
                     defaultValue={selectedOrder?.orderNumber ?? ""}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
 
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Data da compra
                   </span>
                   <input
@@ -395,12 +420,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="purchaseDate"
                     required
                     defaultValue={toDateTimeLocalValue(selectedOrder?.purchaseDate)}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
+                </FormSection>
 
+                <FormSection title="Cliente">
                 <label className="col-span-full">
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Nome do cliente
                   </span>
                   <input
@@ -408,29 +435,31 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     name="customerName"
                     required
                     defaultValue={selectedOrder?.customerName ?? ""}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
 
                 <label className="col-span-full">
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     E-mail do cliente
                   </span>
                   <input
                     type="email"
                     name="customerEmail"
                     defaultValue={selectedOrder?.customerEmail ?? ""}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
+                </FormSection>
 
+                <FormSection title="Produto e fornecedor">
                 <label className="col-span-full">
-                  <span className="mb-2 block text-sm font-medium text-slate-700">Produto</span>
+                  <span className={labelClass}>Produto</span>
                   <select
                     name="productId"
                     required
                     defaultValue={selectedOrder?.productId ?? products[0]?.id}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={selectClass}
                   >
                     {products.map((product) => (
                       <option key={product.id} value={product.id}>
@@ -441,14 +470,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 </label>
 
                 <label className="col-span-full">
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Fornecedor
                   </span>
                   <select
                     name="supplierId"
                     required
                     defaultValue={selectedOrder?.supplierId ?? suppliers[0]?.id}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={selectClass}
                   >
                     {suppliers.map((supplier) => (
                       <option key={supplier.id} value={supplier.id}>
@@ -457,9 +486,11 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     ))}
                   </select>
                 </label>
+                </FormSection>
 
+                <FormSection title="Financeiro">
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">Valor pago</span>
+                  <span className={labelClass}>Valor pago</span>
                   <input
                     type="number"
                     name="saleAmount"
@@ -467,12 +498,12 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     step="0.01"
                     required
                     defaultValue={selectedOrder?.saleAmount.toString() ?? ""}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
 
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">Custo total</span>
+                  <span className={labelClass}>Custo total</span>
                   <input
                     type="number"
                     name="totalCost"
@@ -480,17 +511,19 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     step="0.01"
                     required
                     defaultValue={selectedOrder?.totalCost.toString() ?? ""}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
+                </FormSection>
 
+                <FormSection title="Acompanhamento">
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">Status</span>
+                  <span className={labelClass}>Status</span>
                   <select
                     name="status"
                     required
                     defaultValue={selectedOrder?.status ?? OrderStatus.PAID}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={selectClass}
                   >
                     {orderStatusOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -501,57 +534,58 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                 </label>
 
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Codigo de rastreio
                   </span>
                   <input
                     type="text"
                     name="trackingCode"
                     defaultValue={selectedOrder?.trackingCode ?? ""}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
 
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Prazo estimado
                   </span>
                   <input
                     type="datetime-local"
                     name="estimatedDeliveryDate"
                     defaultValue={toDateTimeLocalValue(selectedOrder?.estimatedDeliveryDate)}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
 
                 <label>
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Data de entrega
                   </span>
                   <input
                     type="datetime-local"
                     name="deliveredDate"
                     defaultValue={toDateTimeLocalValue(selectedOrder?.deliveredDate)}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
 
                 <label className="col-span-full">
-                  <span className="mb-2 block text-sm font-medium text-slate-700">
+                  <span className={labelClass}>
                     Observacoes
                   </span>
                   <textarea
                     name="notes"
                     rows={4}
                     defaultValue={selectedOrder?.notes ?? ""}
-                    className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                    className={inputClass}
                   />
                 </label>
+                </FormSection>
 
                 <div className="col-span-full flex flex-wrap gap-3">
                   <button
                     type="submit"
-                    className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+                    className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-dim)]"
                   >
                     {selectedOrder ? "Salvar alteracoes" : "Criar pedido"}
                   </button>
@@ -564,14 +598,14 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                           success: undefined,
                           error: undefined,
                         })}
-                        className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                        className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
                       >
                         Novo pedido
                       </Link>
                       <button
                         type="submit"
                         formAction={removeOrder}
-                        className="rounded-lg border border-rose-200 px-4 py-3 text-sm font-medium text-rose-700"
+                        className="rounded-lg border border-[var(--error-container)] bg-white px-4 py-3 text-sm font-medium text-[var(--error)] hover:border-[var(--error)]"
                       >
                         Excluir pedido
                       </button>
@@ -589,7 +623,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               action={
                 <Link
                   href={`/invoices?order=${selectedOrder.id}`}
-                  className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+                  className="rounded-md border border-[var(--outline-variant)] bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
                 >
                   Nova NF
                 </Link>
@@ -603,7 +637,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     <Link
                       key={invoice.id}
                       href={`/invoices?edit=${invoice.id}`}
-                      className="block rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50"
+                      className="block rounded-lg border border-[var(--outline-variant)] bg-white p-4 transition hover:border-[var(--primary)]"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -635,13 +669,13 @@ export default async function OrdersPage({ searchParams }: PageProps) {
 
           <AppPanel title="Regras de alerta" eyebrow="Motor simples do MVP">
             <div className="space-y-3 text-sm text-slate-600">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3">
                 Pedido sem atualizacao ha mais de 3 dias.
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3">
                 Pedido com prazo vencido e sem status de entrega.
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3">
                 Pedido em problema ou atraso sempre sobe para o dashboard.
               </div>
             </div>

@@ -1,31 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #edf4f0;
-  --foreground: #263238;
-  --surface: #f4f8f5;
+  --background: #f6f7f9;
+  --foreground: #1f2933;
+  --surface: #f8fafc;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #edf5ef;
-  --surface-container: #e6efe9;
-  --surface-container-high: #dbe8e0;
-  --surface-container-highest: #cfddd4;
-  --surface-variant: #cfddd4;
-  --outline: #66746f;
-  --outline-variant: #a7b4ad;
-  --primary: #1f6b66;
-  --primary-dim: #195954;
-  --primary-container: #d6f1ea;
+  --surface-container-low: #f1f5f9;
+  --surface-container: #e8eef5;
+  --surface-container-high: #dde5ee;
+  --surface-container-highest: #cbd5e1;
+  --surface-variant: #e2e8f0;
+  --outline: #64748b;
+  --outline-variant: #cbd5e1;
+  --primary: #176b63;
+  --primary-dim: #11524d;
+  --primary-container: #d9f2ef;
   --on-primary: #f7fffd;
-  --on-primary-container: #134a46;
-  --secondary: #b95f42;
-  --secondary-container: #ffe2d5;
-  --on-secondary-container: #73341d;
-  --tertiary: #a17a22;
-  --tertiary-container: #f6e5b7;
-  --on-tertiary-container: #5e4300;
-  --on-surface-variant: #5b6761;
-  --error: #b33f3a;
-  --error-container: #ffd8d6;
+  --on-primary-container: #124b47;
+  --secondary: #475569;
+  --secondary-container: #e2e8f0;
+  --on-secondary-container: #334155;
+  --tertiary: #b7791f;
+  --tertiary-container: #fef3c7;
+  --on-tertiary-container: #92400e;
+  --on-surface-variant: #607083;
+  --success: #15803d;
+  --success-container: #dcfce7;
+  --warning: #b7791f;
+  --warning-container: #fef3c7;
+  --error: #b42318;
+  --error-container: #fee2e2;
 }
 
 @theme inline {
@@ -43,7 +47,7 @@ html {
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #eef5f1 0%, #f7fbf8 100%);
+  background: var(--background);
   color: var(--foreground);
   font-family: "Inter", Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
@@ -65,7 +69,7 @@ h3,
 }
 
 .signature-gradient {
-  background: linear-gradient(135deg, #1f6b66 0%, #b95f42 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%);
 }
 
 a {

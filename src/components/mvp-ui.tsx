@@ -6,85 +6,67 @@ type Accent = "teal" | "amber" | "blue" | "rose" | "slate";
 const accentMap: Record<
   Accent,
   {
-    card: string;
     iconWrap: string;
     icon: string;
-    eyebrow: string;
-    note: string;
-    value: string;
+    accent: string;
   }
 > = {
   teal: {
-    card: "bg-[var(--surface-container-low)]",
-    iconWrap: "bg-[var(--surface-container-highest)] text-[var(--primary)]",
+    iconWrap: "bg-[var(--primary-container)] text-[var(--primary)]",
     icon: "payments",
-    eyebrow: "text-[var(--on-surface-variant)]",
-    note: "text-[var(--on-surface-variant)]",
-    value: "text-slate-900",
+    accent: "border-l-[var(--primary)]",
   },
   amber: {
-    card: "bg-[var(--surface-container-lowest)]",
     iconWrap: "bg-[var(--tertiary-container)] text-[var(--on-tertiary-container)]",
     icon: "analytics",
-    eyebrow: "text-[var(--on-surface-variant)]",
-    note: "text-[var(--on-surface-variant)]",
-    value: "text-slate-900",
+    accent: "border-l-[var(--warning)]",
   },
   blue: {
-    card: "signature-gradient shadow-[0_18px_36px_rgba(25,89,84,0.16)]",
-    iconWrap: "bg-white/15 text-white",
+    iconWrap: "bg-slate-100 text-slate-700",
     icon: "trending_up",
-    eyebrow: "text-white/72",
-    note: "text-white/80",
-    value: "text-white",
+    accent: "border-l-slate-700",
   },
   rose: {
-    card: "bg-[color:rgba(254,137,131,0.18)]",
-    iconWrap: "bg-white/70 text-[var(--error)]",
+    iconWrap: "bg-[var(--error-container)] text-[var(--error)]",
     icon: "warning",
-    eyebrow: "text-[var(--error)]",
-    note: "text-[var(--on-surface-variant)]",
-    value: "text-slate-900",
+    accent: "border-l-[var(--error)]",
   },
   slate: {
-    card: "bg-[var(--surface-container-lowest)] shadow-[0_20px_40px_rgba(42,52,57,0.06)]",
-    iconWrap: "bg-[var(--primary-container)] text-[var(--primary)]",
+    iconWrap: "bg-[var(--surface-container-low)] text-slate-700",
     icon: "bar_chart",
-    eyebrow: "text-[var(--on-surface-variant)]",
-    note: "text-[var(--on-surface-variant)]",
-    value: "text-slate-900",
+    accent: "border-l-slate-400",
   },
 };
 
 const statusMap: Record<string, string> = {
   Ativo: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
-  Vencedor: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Vencedor: "bg-[var(--success-container)] text-[var(--success)]",
   Testando: "bg-[var(--tertiary-container)] text-[var(--on-tertiary-container)]",
-  Pausado: "bg-[color:rgba(254,137,131,0.18)] text-[var(--error)]",
+  Pausado: "bg-[var(--error-container)] text-[var(--error)]",
   Encerrado: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
-  Pago: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Pago: "bg-[var(--success-container)] text-[var(--success)]",
   "Aguardando compra": "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
   Comprado: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
   Enviado: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
-  Entregue: "bg-[var(--tertiary-container)] text-[var(--on-tertiary-container)]",
-  Atraso: "bg-[color:rgba(254,137,131,0.18)] text-[var(--error)]",
-  Problema: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
-  Reembolsado: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
+  Entregue: "bg-[var(--success-container)] text-[var(--success)]",
+  Atraso: "bg-[var(--warning-container)] text-[var(--on-tertiary-container)]",
+  Problema: "bg-[var(--error-container)] text-[var(--error)]",
+  Reembolsado: "bg-[var(--error-container)] text-[var(--error)]",
   Cancelado: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
   Compra: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
   Venda: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
   Emitida: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
-  Paga: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
-  Cancelada: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
-  Receita: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Paga: "bg-[var(--success-container)] text-[var(--success)]",
+  Cancelada: "bg-[var(--error-container)] text-[var(--error)]",
+  Receita: "bg-[var(--success-container)] text-[var(--success)]",
   Despesa: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
-  Reembolso: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
-  Alta: "bg-[color:rgba(159,64,61,0.12)] text-[var(--error)]",
-  Media: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
+  Reembolso: "bg-[var(--error-container)] text-[var(--error)]",
+  Alta: "bg-[var(--error-container)] text-[var(--error)]",
+  Media: "bg-[var(--warning-container)] text-[var(--on-tertiary-container)]",
   Baixa: "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
   Pendente: "bg-[var(--surface-container-high)] text-[var(--on-surface-variant)]",
   "Em andamento": "bg-[var(--primary-container)] text-[var(--on-primary-container)]",
-  Concluida: "bg-[var(--secondary-container)] text-[var(--on-secondary-container)]",
+  Concluida: "bg-[var(--success-container)] text-[var(--success)]",
 };
 
 export function AppPanel({
@@ -99,15 +81,15 @@ export function AppPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-[var(--surface-container-highest)] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(248,251,249,0.98)_100%)] p-6 shadow-[0_22px_40px_rgba(31,45,40,0.06)]">
+    <section className="rounded-lg border border-[var(--outline-variant)] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           {eyebrow ? (
-            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--on-surface-variant)]">
+            <p className="mb-1 text-xs font-semibold text-[var(--on-surface-variant)]">
               {eyebrow}
             </p>
           ) : null}
-          <h2 className="font-headline text-lg font-bold text-slate-900">{title}</h2>
+          <h2 className="font-headline text-lg font-bold text-slate-950">{title}</h2>
         </div>
         {action ? <div>{action}</div> : null}
       </div>
@@ -131,7 +113,7 @@ export function MetricCard({
 
   return (
     <div
-      className={`flex min-h-[172px] flex-col justify-between rounded-lg border border-white/40 p-6 ${theme.card}`}
+      className={`flex min-h-[152px] flex-col justify-between rounded-lg border border-l-4 border-[var(--outline-variant)] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${theme.accent}`}
     >
       <div>
         <div
@@ -139,15 +121,13 @@ export function MetricCard({
         >
           <span className="material-symbols-outlined text-[20px]">{theme.icon}</span>
         </div>
-        <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${theme.eyebrow}`}>
-          {label}
-        </p>
+        <p className="text-sm font-medium text-[var(--on-surface-variant)]">{label}</p>
       </div>
       <div>
-        <p className={`font-headline text-3xl font-extrabold tracking-tight ${theme.value}`}>
+        <p className="font-headline text-3xl font-extrabold tracking-tight text-slate-950">
           {value}
         </p>
-        <p className={`mt-2 text-sm ${theme.note}`}>{note}</p>
+        <p className="mt-2 text-sm text-[var(--on-surface-variant)]">{note}</p>
       </div>
     </div>
   );
@@ -156,7 +136,7 @@ export function MetricCard({
 export function StatusPill({ label }: { label: string }) {
   return (
     <span
-      className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] ${
+      className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)] ${
         statusMap[label] ?? "bg-slate-100 text-slate-900"
       }`}
     >
@@ -176,8 +156,8 @@ export function FilterChip({
     <span
       className={`inline-flex rounded-md border px-3 py-2 text-sm font-medium ${
         active
-          ? "border-slate-900 bg-slate-900 text-white"
-          : "border-[var(--surface-container-high)] bg-[var(--surface-container-lowest)] text-[var(--on-surface-variant)]"
+          ? "border-slate-950 bg-slate-950 text-white"
+          : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
       }`}
     >
       {label}
@@ -230,8 +210,11 @@ export function ProgressBar({
 
 export function EmptyHint({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-6 text-sm text-[var(--on-surface-variant)]">
-      {text}
+    <div className="rounded-lg border border-dashed border-[var(--outline-variant)] bg-white px-4 py-8 text-center text-sm text-[var(--on-surface-variant)]">
+      <span className="material-symbols-outlined mx-auto mb-2 text-[24px] text-[var(--outline)]">
+        inventory_2
+      </span>
+      <p>{text}</p>
     </div>
   );
 }
@@ -248,7 +231,7 @@ export function NoticeBanner({
       className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${
         tone === "success"
           ? "border-[color:rgba(31,107,102,0.12)] bg-[color:rgba(214,241,234,0.74)] text-[var(--on-primary-container)]"
-          : "border-[color:rgba(179,63,58,0.16)] bg-[color:rgba(255,216,214,0.72)] text-[var(--error)]"
+          : "border-[color:rgba(180,35,24,0.16)] bg-[var(--error-container)] text-[var(--error)]"
       }`}
     >
       <span className="material-symbols-outlined text-[18px]">
@@ -304,7 +287,7 @@ export function PaginationControls({
           className={`rounded-md border px-3 py-2 text-sm font-medium ${
             page === 1
               ? "pointer-events-none border-transparent bg-[var(--surface-container-high)] text-slate-400"
-              : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+              : "border-[var(--outline-variant)] bg-white text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
           }`}
         >
           Anterior
@@ -315,7 +298,7 @@ export function PaginationControls({
           className={`rounded-md border px-3 py-2 text-sm font-medium ${
             page === totalPages
               ? "pointer-events-none border-transparent bg-[var(--surface-container-high)] text-slate-400"
-              : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+              : "border-[var(--outline-variant)] bg-white text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
           }`}
         >
           Proxima
@@ -342,10 +325,10 @@ export function AlertCard({
 }) {
   const toneClass =
     severity === "high"
-      ? "bg-[color:rgba(254,137,131,0.18)]"
+      ? "border-l-[var(--error)]"
       : severity === "medium"
-        ? "bg-[var(--surface-container-low)]"
-        : "bg-[color:rgba(213,227,252,0.45)]";
+        ? "border-l-[var(--warning)]"
+        : "border-l-[var(--primary)]";
 
   const severityLabel =
     severity === "high" ? "Alta" : severity === "medium" ? "Media" : "Baixa";
@@ -363,12 +346,12 @@ export function AlertCard({
               : category;
 
   return (
-    <div className={`rounded-lg p-4 ${toneClass}`}>
+    <div className={`rounded-lg border border-l-4 border-[var(--outline-variant)] bg-white p-4 ${toneClass}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-white/80 px-2.5 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
+        <span className="rounded-md bg-[var(--surface-container-low)] px-2.5 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
           {categoryLabel}
         </span>
-        <span className="rounded-md bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
+        <span className="rounded-md bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white">
           Prioridade {severityLabel}
         </span>
       </div>

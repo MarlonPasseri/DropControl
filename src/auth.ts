@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { authConfig } from "@/auth.config";
-import { createUser, getUserByEmail, getUserCount } from "@/lib/data/users";
+import { createUser, getUserByEmail } from "@/lib/data/users";
 import { verifyPassword } from "@/lib/password";
 import {
   assertSignInAllowed,
@@ -41,12 +41,6 @@ async function resolveGoogleUser(input: {
 
   if (existingUser) {
     return existingUser;
-  }
-
-  const totalUsers = await getUserCount();
-
-  if (totalUsers > 0) {
-    return null;
   }
 
   return createUser({

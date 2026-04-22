@@ -3,6 +3,27 @@ import { handleTikTokWebhook } from "@/lib/integrations/tiktok/service";
 
 export const runtime = "nodejs";
 
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const challenge =
+    url.searchParams.get("challenge") ??
+    url.searchParams.get("hub.challenge") ??
+    url.searchParams.get("echostr");
+
+  if (challenge) {
+    return new Response(challenge, {
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    message: "Webhook do TikTok Shop ativo.",
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const rawBody = await request.text();

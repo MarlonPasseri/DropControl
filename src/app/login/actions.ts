@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { type FormState, initialFormState } from "@/app/login/form-state";
-import { createUser, getUserByEmail, getUserCount } from "@/lib/data/users";
+import { createUser, getUserByEmail } from "@/lib/data/users";
 import { hashPassword } from "@/lib/password";
 import {
   clearRegistrationFailures,
@@ -118,22 +118,13 @@ export async function registerOperator(
   const { name, email, password } = parsed.data;
 
   try {
-    const totalUsers = await getUserCount();
-
-    if (totalUsers > 0) {
-      return {
-        status: "error",
-        message: "Cadastro publico encerrado. Entre com uma conta ja liberada.",
-      };
-    }
-
     const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
       recordRegistrationFailure(clientIp);
       return {
         status: "error",
-        message: "Ja existe uma conta com esse e-mail.",
+        message: "Ja existe uma conta com esse e-mail. Entre com ela para continuar.",
       };
     }
 
@@ -146,14 +137,6 @@ export async function registerOperator(
     });
 
     clearRegistrationFailures(clientIp);
-
-    return {
-      status: "success",
-      message:
-        totalUsers === 0
-          ? "Conta inicial criada. Entre com esse e-mail e senha."
-          : "Conta criada com sucesso. Agora e so entrar.",
-    };
   } catch {
     recordRegistrationFailure(clientIp);
     return {
@@ -162,4 +145,15 @@ export async function registerOperator(
         "Nao foi possivel criar a conta. Confira DATABASE_URL, migrations e a conexao com o banco.",
     };
   }
+
+  await signIn("credentials", {
+    email,
+    password,
+    redirectTo: resolveRedirectTarget(`${formData.get("redirectTo") ?? ""}`),
+  });
+
+  return {
+    status: "success",
+    message: "Conta criada com sucesso.",
+  };
 }

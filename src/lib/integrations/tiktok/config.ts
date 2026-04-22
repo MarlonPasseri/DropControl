@@ -30,7 +30,9 @@ export function getTikTokShopConfig(request?: Request) {
   const appKey = process.env.TIKTOK_SHOP_APP_KEY?.trim();
   const appSecret = process.env.TIKTOK_SHOP_APP_SECRET?.trim();
   const authUrl = cleanUrl(process.env.TIKTOK_SHOP_AUTH_URL);
-  const tokenUrl = cleanUrl(process.env.TIKTOK_SHOP_TOKEN_URL);
+  const tokenUrl =
+    cleanUrl(process.env.TIKTOK_SHOP_TOKEN_URL) ??
+    "https://auth.tiktok-shops.com/api/v2/token/get";
   const apiBaseUrl = cleanUrl(process.env.TIKTOK_SHOP_API_BASE_URL);
   const scopes = process.env.TIKTOK_SHOP_SCOPES?.split(",")
     .map((scope) => scope.trim())
