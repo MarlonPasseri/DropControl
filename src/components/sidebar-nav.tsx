@@ -13,6 +13,7 @@ const iconMap: Record<string, string> = {
   "/invoices": "receipt",
   "/finance": "payments",
   "/tasks": "assignment",
+  "/security": "security",
   "/profile": "account_circle",
 };
 

@@ -10,6 +10,7 @@ import {
 } from "@/lib/data/tasks";
 import { getProductById } from "@/lib/data/products";
 import { requireUser } from "@/lib/require-user";
+import { recordAuditLog } from "@/lib/security/audit";
 import { taskSchema } from "@/lib/validations/tasks";
 
 function tasksRedirect(params: Record<string, string | undefined>): never {
@@ -82,6 +83,18 @@ export async function saveTask(formData: FormData) {
       dueDate,
       relatedProductId: data.relatedProductId,
     });
+    await recordAuditLog({
+      actor: user,
+      action: "UPDATE",
+      resource: "task",
+      resourceId: data.id,
+      summary: `Tarefa ${data.title} atualizada.`,
+      metadata: {
+        priority: data.priority,
+        status: data.status,
+        relatedProductId: data.relatedProductId ?? null,
+      },
+    });
 
     revalidatePath("/tasks");
     tasksRedirect({
@@ -99,6 +112,18 @@ export async function saveTask(formData: FormData) {
     assigneeName: data.assigneeName,
     dueDate,
     relatedProductId: data.relatedProductId,
+  });
+  await recordAuditLog({
+    actor: user,
+    action: "CREATE",
+    resource: "task",
+    resourceId: task.id,
+    summary: `Tarefa ${task.title} criada.`,
+    metadata: {
+      priority: task.priority,
+      status: task.status,
+      relatedProductId: task.relatedProductId,
+    },
   });
 
   revalidatePath("/tasks");
@@ -123,6 +148,17 @@ export async function removeTask(formData: FormData) {
   }
 
   await deleteTask(taskId);
+  await recordAuditLog({
+    actor: user,
+    action: "DELETE",
+    resource: "task",
+    resourceId: taskId,
+    summary: `Tarefa ${existingTask.title} removida.`,
+    metadata: {
+      priority: existingTask.priority,
+      status: existingTask.status,
+    },
+  });
   revalidatePath("/tasks");
   tasksRedirect({ success: "Tarefa removida com sucesso." });
 }

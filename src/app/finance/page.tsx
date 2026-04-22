@@ -112,18 +112,16 @@ export default async function FinancePage({ searchParams }: PageProps) {
     : undefined;
   const defaultReferenceDate = new Date();
 
-  const [analytics, entries, orderOptions, selectedEntry, invoiceSnapshot] = await Promise.all([
-    getFinanceAnalytics(user.id),
-    getFinancialEntriesByUser(user.id, {
-      query: query || undefined,
-      type: typeFilter,
-      from: fromDate,
-      to: toDate,
-    }),
-    getOrderOptions(user.id),
-    editId ? getFinancialEntryById(user.id, editId) : Promise.resolve(null),
-    getInvoiceFinanceSnapshot(user.id),
-  ]);
+  const analytics = await getFinanceAnalytics(user.id);
+  const entries = await getFinancialEntriesByUser(user.id, {
+    query: query || undefined,
+    type: typeFilter,
+    from: fromDate,
+    to: toDate,
+  });
+  const orderOptions = await getOrderOptions(user.id);
+  const selectedEntry = editId ? await getFinancialEntryById(user.id, editId) : null;
+  const invoiceSnapshot = await getInvoiceFinanceSnapshot(user.id);
   const paginatedEntries = paginateItems(entries, page);
 
   const financeMetrics = [

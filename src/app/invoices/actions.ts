@@ -15,6 +15,7 @@ import { parseInvoiceXml } from "@/lib/invoices/xml";
 import { getOrderById } from "@/lib/data/orders";
 import { getSupplierById } from "@/lib/data/suppliers";
 import { requireUser } from "@/lib/require-user";
+import { recordAuditLog } from "@/lib/security/audit";
 import { invoiceSchema } from "@/lib/validations/invoices";
 
 function invoicesRedirect(params: Record<string, string | undefined>): never {
@@ -293,6 +294,20 @@ export async function saveInvoice(formData: FormData) {
       taxAmount: data.taxAmount ?? null,
       notes: data.notes,
     });
+    await recordAuditLog({
+      actor: user,
+      action: "UPDATE",
+      resource: "invoice",
+      resourceId: data.id,
+      summary: `Nota fiscal ${data.number} atualizada.`,
+      metadata: {
+        number: data.number,
+        type: data.type,
+        status: data.status,
+        orderId: relations.orderId,
+        supplierId: relations.supplierId,
+      },
+    });
 
     revalidateInvoiceSurfaces();
     invoicesRedirect({
@@ -318,6 +333,20 @@ export async function saveInvoice(formData: FormData) {
     amount: data.amount,
     taxAmount: data.taxAmount ?? null,
     notes: data.notes,
+  });
+  await recordAuditLog({
+    actor: user,
+    action: "CREATE",
+    resource: "invoice",
+    resourceId: invoice.id,
+    summary: `Nota fiscal ${invoice.number} criada.`,
+    metadata: {
+      number: invoice.number,
+      type: invoice.type,
+      status: invoice.status,
+      orderId: invoice.orderId,
+      supplierId: invoice.supplierId,
+    },
   });
 
   revalidateInvoiceSurfaces();
@@ -417,6 +446,20 @@ export async function importInvoiceXml(formData: FormData) {
     productSupplierId: relations.productSupplierId,
     fallbackProductId: relations.orderProductId,
   });
+  await recordAuditLog({
+    actor: user,
+    action: "IMPORT",
+    resource: "invoice",
+    resourceId: invoice.id,
+    summary: `XML da nota fiscal ${invoice.number} importado.`,
+    metadata: {
+      number: invoice.number,
+      fileName: xmlFile.name,
+      linkedItems: productSummary.linkedItems,
+      createdProducts: productSummary.createdProducts,
+      skippedItems: productSummary.skippedItems,
+    },
+  });
 
   revalidateInvoiceSurfaces();
   invoicesRedirect({
@@ -456,6 +499,18 @@ export async function removeInvoice(formData: FormData) {
   }
 
   await deleteInvoice(invoiceId);
+  await recordAuditLog({
+    actor: user,
+    action: "DELETE",
+    resource: "invoice",
+    resourceId: invoiceId,
+    summary: `Nota fiscal ${existingInvoice.number} removida.`,
+    metadata: {
+      number: existingInvoice.number,
+      type: existingInvoice.type,
+      status: existingInvoice.status,
+    },
+  });
   revalidateInvoiceSurfaces();
   invoicesRedirect({
     success: "Nota fiscal removida com sucesso.",

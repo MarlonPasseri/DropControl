@@ -2,12 +2,16 @@ import { FinancialCategory, FinancialEntryType } from "@prisma/client";
 import { z } from "zod";
 
 const optionalText = z
-  .string()
-  .trim()
-  .transform((value) => value || undefined);
+  .preprocess(
+    (value) => value ?? "",
+    z
+      .string()
+      .trim()
+      .transform((value) => value || undefined),
+  );
 
 export const financialEntrySchema = z.object({
-  id: z.string().trim().optional(),
+  id: optionalText,
   orderId: optionalText,
   type: z.nativeEnum(FinancialEntryType),
   category: z.nativeEnum(FinancialCategory),

@@ -12,6 +12,7 @@ import {
 } from "@/lib/data/products";
 import { getSupplierById } from "@/lib/data/suppliers";
 import { requireUser } from "@/lib/require-user";
+import { recordAuditLog } from "@/lib/security/audit";
 import { productSchema } from "@/lib/validations/products";
 
 function productRedirect(params: Record<string, string | undefined>): never {
@@ -89,6 +90,18 @@ export async function saveProduct(formData: FormData) {
         status: data.status,
         notes: data.notes,
       });
+      await recordAuditLog({
+        actor: user,
+        action: "UPDATE",
+        resource: "product",
+        resourceId: data.id,
+        summary: `Produto ${data.sku} atualizado.`,
+        metadata: {
+          sku: data.sku,
+          status: data.status,
+          supplierId: data.supplierId,
+        },
+      });
 
       revalidatePath("/products");
       productRedirect({
@@ -111,6 +124,18 @@ export async function saveProduct(formData: FormData) {
       estimatedMargin,
       status: data.status,
       notes: data.notes,
+    });
+    await recordAuditLog({
+      actor: user,
+      action: "CREATE",
+      resource: "product",
+      resourceId: product.id,
+      summary: `Produto ${product.sku} criado.`,
+      metadata: {
+        sku: product.sku,
+        status: product.status,
+        supplierId: product.supplierId,
+      },
     });
 
     revalidatePath("/products");
@@ -158,6 +183,17 @@ export async function removeProduct(formData: FormData) {
   }
 
   await deleteProduct(productId);
+  await recordAuditLog({
+    actor: user,
+    action: "DELETE",
+    resource: "product",
+    resourceId: productId,
+    summary: `Produto ${existingProduct.sku} removido.`,
+    metadata: {
+      sku: existingProduct.sku,
+      status: existingProduct.status,
+    },
+  });
   revalidatePath("/products");
   productRedirect({ success: "Produto removido com sucesso." });
 }

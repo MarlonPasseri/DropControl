@@ -12,6 +12,7 @@ import {
   isRegistrationBlocked,
   recordRegistrationFailure,
 } from "@/lib/security/auth-guard";
+import { recordSecurityEvent } from "@/lib/security/audit";
 import { registerSchema, signInSchema } from "@/lib/validations/auth";
 
 function resolveRedirectTarget(rawTarget?: string) {
@@ -94,6 +95,13 @@ export async function registerOperator(
   const clientIp = getClientIp(await headers());
 
   if (isRegistrationBlocked(clientIp)) {
+    await recordSecurityEvent({
+      type: "REGISTRATION_BLOCKED",
+      severity: "WARN",
+      message: "Cadastro bloqueado por excesso de tentativas.",
+      metadata: { clientIp },
+    });
+
     return {
       status: "error",
       message: "Cadastro temporariamente bloqueado. Aguarde alguns minutos e tente novamente.",
@@ -109,6 +117,13 @@ export async function registerOperator(
 
   if (!parsed.success) {
     recordRegistrationFailure(clientIp);
+    await recordSecurityEvent({
+      type: "REGISTRATION_VALIDATION_FAILED",
+      severity: "WARN",
+      message: parsed.error.issues[0]?.message ?? "Falha de validacao no cadastro.",
+      metadata: { clientIp },
+    });
+
     return {
       status: "error",
       message: parsed.error.issues[0]?.message ?? "Revise os dados da conta.",
@@ -122,6 +137,14 @@ export async function registerOperator(
 
     if (existingUser) {
       recordRegistrationFailure(clientIp);
+      await recordSecurityEvent({
+        email,
+        type: "REGISTRATION_DUPLICATE_EMAIL",
+        severity: "WARN",
+        message: "Tentativa de cadastro com e-mail ja existente.",
+        metadata: { clientIp },
+      });
+
       return {
         status: "error",
         message: "Ja existe uma conta com esse e-mail. Entre com ela para continuar.",
@@ -130,15 +153,31 @@ export async function registerOperator(
 
     const passwordHash = await hashPassword(password);
 
-    await createUser({
+    const createdUser = await createUser({
       name,
       email,
       passwordHash,
+    });
+    await recordSecurityEvent({
+      userId: createdUser.id,
+      email: createdUser.email,
+      type: "REGISTRATION_SUCCESS",
+      severity: "INFO",
+      message: "Conta criada com sucesso.",
+      metadata: { clientIp },
     });
 
     clearRegistrationFailures(clientIp);
   } catch {
     recordRegistrationFailure(clientIp);
+    await recordSecurityEvent({
+      email,
+      type: "REGISTRATION_ERROR",
+      severity: "ERROR",
+      message: "Erro ao criar conta.",
+      metadata: { clientIp },
+    });
+
     return {
       status: "error",
       message:

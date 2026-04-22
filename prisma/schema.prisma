@@ -116,10 +116,54 @@ model User {
   invoices         Invoice[]
   salesChannels    SalesChannelConnection[]
   tasks            Task[]
+  auditLogs        AuditLog[]
+  securityEvents   SecurityEvent[]
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
   @@map("users")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid()) @db.VarChar(191)
+  actorUserId String?  @map("actor_user_id") @db.VarChar(191)
+  actorEmail  String?  @map("actor_email") @db.VarChar(320)
+  action      String   @db.VarChar(80)
+  resource    String   @db.VarChar(80)
+  resourceId  String?  @map("resource_id") @db.VarChar(191)
+  summary     String?  @db.VarChar(500)
+  metadata    Json?
+  ipAddress   String?  @map("ip_address") @db.VarChar(100)
+  userAgent   String?  @map("user_agent") @db.Text
+  requestId   String?  @map("request_id") @db.VarChar(191)
+  createdAt   DateTime @default(now()) @map("created_at")
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([resource, resourceId])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model SecurityEvent {
+  id        String   @id @default(cuid()) @db.VarChar(191)
+  userId    String?  @map("user_id") @db.VarChar(191)
+  email     String?  @db.VarChar(320)
+  type      String   @db.VarChar(100)
+  severity  String   @default("INFO") @db.VarChar(20)
+  message   String?  @db.VarChar(500)
+  metadata  Json?
+  ipAddress String?  @map("ip_address") @db.VarChar(100)
+  userAgent String?  @map("user_agent") @db.Text
+  requestId String?  @map("request_id") @db.VarChar(191)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@index([type, createdAt])
+  @@index([severity, createdAt])
+  @@map("security_events")
 }
 
 model Supplier {

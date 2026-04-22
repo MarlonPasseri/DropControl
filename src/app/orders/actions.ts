@@ -14,6 +14,7 @@ import {
 import { getProductById } from "@/lib/data/products";
 import { getSupplierById } from "@/lib/data/suppliers";
 import { requireUser } from "@/lib/require-user";
+import { recordAuditLog } from "@/lib/security/audit";
 import { orderSchema } from "@/lib/validations/orders";
 
 function ordersRedirect(params: Record<string, string | undefined>): never {
@@ -132,6 +133,18 @@ export async function saveOrder(formData: FormData) {
         deliveredDate,
         notes: data.notes,
       });
+      await recordAuditLog({
+        actor: user,
+        action: "UPDATE",
+        resource: "order",
+        resourceId: data.id,
+        summary: `Pedido ${data.orderNumber} atualizado.`,
+        metadata: {
+          previousStatus: existingOrder.status,
+          nextStatus: data.status,
+          orderNumber: data.orderNumber,
+        },
+      });
 
       revalidatePath("/orders");
       revalidatePath("/dashboard");
@@ -157,6 +170,17 @@ export async function saveOrder(formData: FormData) {
       estimatedDeliveryDate,
       deliveredDate,
       notes: data.notes,
+    });
+    await recordAuditLog({
+      actor: user,
+      action: "CREATE",
+      resource: "order",
+      resourceId: order.id,
+      summary: `Pedido ${order.orderNumber} criado.`,
+      metadata: {
+        status: order.status,
+        orderNumber: order.orderNumber,
+      },
     });
 
     revalidatePath("/orders");
@@ -209,6 +233,17 @@ export async function removeOrder(formData: FormData) {
   }
 
   await deleteOrder(orderId);
+  await recordAuditLog({
+    actor: user,
+    action: "DELETE",
+    resource: "order",
+    resourceId: orderId,
+    summary: `Pedido ${existingOrder.orderNumber} removido.`,
+    metadata: {
+      orderNumber: existingOrder.orderNumber,
+      status: existingOrder.status,
+    },
+  });
   revalidatePath("/orders");
   revalidatePath("/dashboard");
   revalidatePath("/finance");
@@ -235,6 +270,18 @@ export async function changeOrderStatus(formData: FormData) {
     status === OrderStatus.DELIVERED && !existingOrder.deliveredDate ? new Date() : undefined;
 
   await updateOrderStatus(orderId, status, deliveredDate);
+  await recordAuditLog({
+    actor: user,
+    action: "STATUS_CHANGE",
+    resource: "order",
+    resourceId: orderId,
+    summary: `Status do pedido ${existingOrder.orderNumber} atualizado.`,
+    metadata: {
+      previousStatus: existingOrder.status,
+      nextStatus: status,
+      orderNumber: existingOrder.orderNumber,
+    },
+  });
   revalidatePath("/orders");
   revalidatePath("/dashboard");
   revalidatePath("/finance");

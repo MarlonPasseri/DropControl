@@ -2,9 +2,13 @@ import { ContactChannel } from "@prisma/client";
 import { z } from "zod";
 
 const optionalText = z
-  .string()
-  .trim()
-  .transform((value) => value || undefined);
+  .preprocess(
+    (value) => value ?? "",
+    z
+      .string()
+      .trim()
+      .transform((value) => value || undefined),
+  );
 
 const optionalNumber = z.preprocess((value) => {
   if (value === "" || value === null || value === undefined) {
@@ -15,7 +19,7 @@ const optionalNumber = z.preprocess((value) => {
 }, z.number().finite().optional());
 
 export const supplierSchema = z.object({
-  id: z.string().trim().optional(),
+  id: optionalText,
   name: z.string().trim().min(2, "Informe o nome do fornecedor."),
   contactName: optionalText,
   contactChannel: z.nativeEnum(ContactChannel).optional(),

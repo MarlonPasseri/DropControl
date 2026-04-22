@@ -11,6 +11,7 @@ import {
   updateSupplier,
 } from "@/lib/data/suppliers";
 import { requireUser } from "@/lib/require-user";
+import { recordAuditLog } from "@/lib/security/audit";
 import { supplierSchema } from "@/lib/validations/suppliers";
 
 function supplierRedirect(params: Record<string, string | undefined>): never {
@@ -67,6 +68,17 @@ export async function saveSupplier(formData: FormData) {
         issueRate: data.issueRate,
         notes: data.notes,
       });
+      await recordAuditLog({
+        actor: user,
+        action: "UPDATE",
+        resource: "supplier",
+        resourceId: data.id,
+        summary: `Fornecedor ${data.name} atualizado.`,
+        metadata: {
+          name: data.name,
+          contactChannel: data.contactChannel ?? null,
+        },
+      });
 
       revalidatePath("/suppliers");
       supplierRedirect({
@@ -85,6 +97,17 @@ export async function saveSupplier(formData: FormData) {
       reliabilityScore: data.reliabilityScore,
       issueRate: data.issueRate,
       notes: data.notes,
+    });
+    await recordAuditLog({
+      actor: user,
+      action: "CREATE",
+      resource: "supplier",
+      resourceId: supplier.id,
+      summary: `Fornecedor ${supplier.name} criado.`,
+      metadata: {
+        name: supplier.name,
+        contactChannel: supplier.contactChannel,
+      },
     });
 
     revalidatePath("/suppliers");
@@ -125,6 +148,16 @@ export async function removeSupplier(formData: FormData) {
   }
 
   await deleteSupplier(supplierId);
+  await recordAuditLog({
+    actor: user,
+    action: "DELETE",
+    resource: "supplier",
+    resourceId: supplierId,
+    summary: `Fornecedor ${existingSupplier.name} removido.`,
+    metadata: {
+      name: existingSupplier.name,
+    },
+  });
   revalidatePath("/suppliers");
   supplierRedirect({ success: "Fornecedor removido com sucesso." });
 }

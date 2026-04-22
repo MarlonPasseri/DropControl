@@ -100,7 +100,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
                 className="w-full rounded-lg border border-dashed border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-4 text-sm text-[var(--on-surface-variant)] file:mr-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
               />
               <span className="mt-2 block text-xs text-[var(--on-surface-variant)]">
-                JPG, PNG ou WebP ate 800 KB.
+                JPG, PNG ou WebP ate 5 MB.
               </span>
             </label>
 

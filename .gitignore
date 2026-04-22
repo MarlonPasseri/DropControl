@@ -43,3 +43,7 @@ next-env.d.ts
 
 # local logs
 next-dev-*.log
+
+# local profile uploads
+/public/uploads/profile/*
+!/public/uploads/profile/.gitkeep

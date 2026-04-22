@@ -46,6 +46,8 @@ Sistema operacional para dropshipping com autenticacao, cadastros, pedidos, tare
 - [Wireframes do MVP](./docs/mvp-wireframes.md)
 - [Backlog por fases](./docs/mvp-backlog.md)
 - [Banco local com Docker](./docs/docker-db.md)
+- [Seguranca de rede](./docs/security-network.md)
+- [Roadmap de seguranca](./docs/security-roadmap.md)
 - [Schema Prisma](./prisma/schema.prisma)
 - [Config do Prisma](./prisma.config.ts)
 

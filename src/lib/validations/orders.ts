@@ -2,22 +2,32 @@ import { OrderStatus } from "@prisma/client";
 import { z } from "zod";
 
 const optionalText = z
-  .string()
-  .trim()
-  .transform((value) => value || undefined);
+  .preprocess(
+    (value) => value ?? "",
+    z
+      .string()
+      .trim()
+      .transform((value) => value || undefined),
+  );
+
+const requiredText = (message: string) =>
+  z.preprocess((value) => value ?? "", z.string().trim().min(1, message));
+
+const requiredMinText = (length: number, message: string) =>
+  z.preprocess((value) => value ?? "", z.string().trim().min(length, message));
+
+const optionalEmail = optionalText.pipe(
+  z.string().email("Informe um e-mail valido.").optional(),
+);
 
 export const orderSchema = z.object({
-  id: z.string().trim().optional(),
-  orderNumber: z.string().trim().min(2, "Informe o numero do pedido."),
-  customerName: z.string().trim().min(2, "Informe o nome do cliente."),
-  customerEmail: z
-    .string()
-    .trim()
-    .transform((value) => value || undefined)
-    .pipe(z.string().email("Informe um e-mail valido.").optional()),
-  productId: z.string().trim().min(1, "Selecione um produto."),
-  supplierId: z.string().trim().min(1, "Selecione um fornecedor."),
-  purchaseDate: z.string().trim().min(1, "Informe a data da compra."),
+  id: optionalText,
+  orderNumber: requiredMinText(2, "Informe o numero do pedido."),
+  customerName: requiredMinText(2, "Informe o nome do cliente."),
+  customerEmail: optionalEmail,
+  productId: requiredText("Selecione um produto."),
+  supplierId: requiredText("Selecione um fornecedor."),
+  purchaseDate: requiredText("Informe a data da compra."),
   saleAmount: z.coerce.number().positive("Informe o valor pago."),
   totalCost: z.coerce.number().min(0, "Informe o custo total."),
   status: z.nativeEnum(OrderStatus),

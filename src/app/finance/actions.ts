@@ -11,6 +11,7 @@ import {
 } from "@/lib/data/finance";
 import { getOrderById } from "@/lib/data/orders";
 import { requireUser } from "@/lib/require-user";
+import { recordAuditLog } from "@/lib/security/audit";
 import { financialEntrySchema } from "@/lib/validations/finance";
 
 function financeRedirect(params: Record<string, string | undefined>): never {
@@ -94,6 +95,18 @@ export async function saveFinancialEntry(formData: FormData) {
       referenceDate,
       description: data.description,
     });
+    await recordAuditLog({
+      actor: user,
+      action: "UPDATE",
+      resource: "financial_entry",
+      resourceId: data.id,
+      summary: "Lancamento financeiro atualizado.",
+      metadata: {
+        type: data.type,
+        category: data.category,
+        orderId: data.orderId ?? null,
+      },
+    });
 
     revalidatePath("/finance");
     revalidatePath("/dashboard");
@@ -112,6 +125,18 @@ export async function saveFinancialEntry(formData: FormData) {
     amount: data.amount,
     referenceDate,
     description: data.description,
+  });
+  await recordAuditLog({
+    actor: user,
+    action: "CREATE",
+    resource: "financial_entry",
+    resourceId: entry.id,
+    summary: "Lancamento financeiro criado.",
+    metadata: {
+      type: entry.type,
+      category: entry.category,
+      orderId: entry.orderId,
+    },
   });
 
   revalidatePath("/finance");
@@ -138,6 +163,18 @@ export async function removeFinancialEntry(formData: FormData) {
   }
 
   await deleteFinancialEntry(entryId);
+  await recordAuditLog({
+    actor: user,
+    action: "DELETE",
+    resource: "financial_entry",
+    resourceId: entryId,
+    summary: "Lancamento financeiro removido.",
+    metadata: {
+      type: existingEntry.type,
+      category: existingEntry.category,
+      orderId: existingEntry.orderId,
+    },
+  });
   revalidatePath("/finance");
   revalidatePath("/dashboard");
   revalidatePath("/orders");

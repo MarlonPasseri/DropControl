@@ -332,37 +332,35 @@ export async function getCurrentMonthFinanceSnapshot(
   const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
   const nextMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 1);
 
-  const [orderAggregate, entryGroups] = await prisma.$transaction([
-    prisma.order.aggregate({
-      where: {
-        userId,
-        purchaseDate: {
-          gte: monthStart,
-          lt: nextMonth,
-        },
+  const orderAggregate = await prisma.order.aggregate({
+    where: {
+      userId,
+      purchaseDate: {
+        gte: monthStart,
+        lt: nextMonth,
       },
-      _sum: {
-        saleAmount: true,
-        totalCost: true,
+    },
+    _sum: {
+      saleAmount: true,
+      totalCost: true,
+    },
+  });
+  const entryGroups = await prisma.financialEntry.groupBy({
+    by: ["type"],
+    orderBy: {
+      type: "asc",
+    },
+    where: {
+      userId,
+      referenceDate: {
+        gte: monthStart,
+        lt: nextMonth,
       },
-    }),
-    prisma.financialEntry.groupBy({
-      by: ["type"],
-      orderBy: {
-        type: "asc",
-      },
-      where: {
-        userId,
-        referenceDate: {
-          gte: monthStart,
-          lt: nextMonth,
-        },
-      },
-      _sum: {
-        amount: true,
-      },
-    }),
-  ]);
+    },
+    _sum: {
+      amount: true,
+    },
+  });
 
   const incomeGroup = entryGroups.find((group) => group.type === FinancialEntryType.INCOME);
   const expenseGroup = entryGroups.find((group) => group.type === FinancialEntryType.EXPENSE);
@@ -382,57 +380,55 @@ export async function getCurrentMonthFinanceSnapshot(
 }
 
 export async function getFinanceAnalytics(userId: string, monthCount = 6) {
-  const [orders, standaloneEntries, refundEntries] = await prisma.$transaction([
-    prisma.order.findMany({
-      where: {
-        userId,
-      },
-      select: orderFinanceSelect,
-      orderBy: [{ purchaseDate: "desc" }, { createdAt: "desc" }],
-    }),
-    prisma.financialEntry.findMany({
-      where: {
-        userId,
-        orderId: null,
-      },
-      select: {
-        id: true,
-        type: true,
-        category: true,
-        amount: true,
-        referenceDate: true,
-        description: true,
-      },
-      orderBy: [{ referenceDate: "desc" }, { createdAt: "desc" }],
-    }),
-    prisma.financialEntry.findMany({
-      where: {
-        userId,
-        type: FinancialEntryType.REFUND,
-      },
-      include: {
-        order: {
-          select: {
-            id: true,
-            orderNumber: true,
-            customerName: true,
-            product: {
-              select: {
-                name: true,
-              },
+  const orders = await prisma.order.findMany({
+    where: {
+      userId,
+    },
+    select: orderFinanceSelect,
+    orderBy: [{ purchaseDate: "desc" }, { createdAt: "desc" }],
+  });
+  const standaloneEntries = await prisma.financialEntry.findMany({
+    where: {
+      userId,
+      orderId: null,
+    },
+    select: {
+      id: true,
+      type: true,
+      category: true,
+      amount: true,
+      referenceDate: true,
+      description: true,
+    },
+    orderBy: [{ referenceDate: "desc" }, { createdAt: "desc" }],
+  });
+  const refundEntries = await prisma.financialEntry.findMany({
+    where: {
+      userId,
+      type: FinancialEntryType.REFUND,
+    },
+    include: {
+      order: {
+        select: {
+          id: true,
+          orderNumber: true,
+          customerName: true,
+          product: {
+            select: {
+              name: true,
             },
-            supplier: {
-              select: {
-                name: true,
-              },
+          },
+          supplier: {
+            select: {
+              name: true,
             },
           },
         },
       },
-      orderBy: [{ referenceDate: "desc" }, { createdAt: "desc" }],
-      take: 8,
-    }),
-  ]);
+    },
+    orderBy: [{ referenceDate: "desc" }, { createdAt: "desc" }],
+    take: 8,
+  });
 
   const monthlyBuckets = createMonthlyBuckets(monthCount);
   const currentMonthKey = getMonthKey(new Date());

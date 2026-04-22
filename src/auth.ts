@@ -9,6 +9,10 @@ import {
   clearSignInFailures,
   recordSignInFailure,
 } from "@/lib/security/auth-guard";
+import {
+  getRequestContextFromHeaders,
+  recordSecurityEvent,
+} from "@/lib/security/audit";
 import { signInSchema } from "@/lib/validations/auth";
 
 function normalizeEmail(email: string | null | undefined) {
@@ -106,8 +110,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials, request) {
         const rawEmail = `${credentials.email ?? ""}`;
+        const context = getRequestContextFromHeaders(request.headers);
 
-        assertSignInAllowed(rawEmail, request);
+        try {
+          assertSignInAllowed(rawEmail, request);
+        } catch (error) {
+          await recordSecurityEvent({
+            email: rawEmail,
+            type: "SIGN_IN_RATE_LIMITED",
+            severity: "WARN",
+            message: "Login bloqueado por excesso de tentativas.",
+            context,
+          });
+
+          throw error;
+        }
 
         const parsedCredentials = signInSchema
           .pick({
@@ -118,6 +135,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!parsedCredentials.success) {
           recordSignInFailure(rawEmail, request);
+          await recordSecurityEvent({
+            email: rawEmail,
+            type: "SIGN_IN_VALIDATION_FAILED",
+            severity: "WARN",
+            message: parsedCredentials.error.issues[0]?.message ?? "Credenciais invalidas.",
+            context,
+          });
           return null;
         }
 
@@ -126,6 +150,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user) {
           recordSignInFailure(email, request);
+          await recordSecurityEvent({
+            email,
+            type: "SIGN_IN_FAILED",
+            severity: "WARN",
+            message: "Login falhou: usuario nao encontrado.",
+            context,
+          });
           return null;
         }
 
@@ -133,10 +164,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!passwordMatches) {
           recordSignInFailure(email, request);
+          await recordSecurityEvent({
+            userId: user.id,
+            email,
+            type: "SIGN_IN_FAILED",
+            severity: "WARN",
+            message: "Login falhou: senha invalida.",
+            context,
+          });
           return null;
         }
 
         clearSignInFailures(email, request);
+        await recordSecurityEvent({
+          userId: user.id,
+          email,
+          type: "SIGN_IN_SUCCESS",
+          severity: "INFO",
+          message: "Login realizado com sucesso.",
+          context,
+        });
 
         return {
           id: user.id,

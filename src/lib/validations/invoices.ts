@@ -2,9 +2,13 @@ import { InvoiceStatus, InvoiceType } from "@prisma/client";
 import { z } from "zod";
 
 const optionalText = z
-  .string()
-  .trim()
-  .transform((value) => value || undefined);
+  .preprocess(
+    (value) => value ?? "",
+    z
+      .string()
+      .trim()
+      .transform((value) => value || undefined),
+  );
 
 const optionalNumber = z.preprocess((value) => {
   const rawValue = `${value ?? ""}`.trim();
@@ -17,7 +21,7 @@ const optionalNumber = z.preprocess((value) => {
 }, z.number().min(0, "Informe um valor igual ou maior que zero.").optional());
 
 export const invoiceSchema = z.object({
-  id: z.string().trim().optional(),
+  id: optionalText,
   orderId: optionalText,
   supplierId: optionalText,
   number: z.string().trim().min(1, "Informe o numero da nota fiscal."),

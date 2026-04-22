@@ -228,51 +228,48 @@ export async function getInvoiceMetrics(userId: string, referenceDate = new Date
   const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
   const nextMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 1);
 
-  const [openCount, overdueCount, issuedThisMonthCount, openAggregate] =
-    await prisma.$transaction([
-      prisma.invoice.count({
-        where: {
-          userId,
-          status: {
-            in: openStatuses,
-          },
-        },
-      }),
-      prisma.invoice.count({
-        where: {
-          userId,
-          status: {
-            in: openStatuses,
-          },
-          dueDate: {
-            lt: referenceDate,
-          },
-        },
-      }),
-      prisma.invoice.count({
-        where: {
-          userId,
-          issueDate: {
-            gte: monthStart,
-            lt: nextMonth,
-          },
-          status: {
-            not: InvoiceStatus.CANCELED,
-          },
-        },
-      }),
-      prisma.invoice.aggregate({
-        where: {
-          userId,
-          status: {
-            in: openStatuses,
-          },
-        },
-        _sum: {
-          amount: true,
-        },
-      }),
-    ]);
+  const openCount = await prisma.invoice.count({
+    where: {
+      userId,
+      status: {
+        in: openStatuses,
+      },
+    },
+  });
+  const overdueCount = await prisma.invoice.count({
+    where: {
+      userId,
+      status: {
+        in: openStatuses,
+      },
+      dueDate: {
+        lt: referenceDate,
+      },
+    },
+  });
+  const issuedThisMonthCount = await prisma.invoice.count({
+    where: {
+      userId,
+      issueDate: {
+        gte: monthStart,
+        lt: nextMonth,
+      },
+      status: {
+        not: InvoiceStatus.CANCELED,
+      },
+    },
+  });
+  const openAggregate = await prisma.invoice.aggregate({
+    where: {
+      userId,
+      status: {
+        in: openStatuses,
+      },
+    },
+    _sum: {
+      amount: true,
+    },
+  });
 
   return {
     openCount,
@@ -292,68 +289,65 @@ export async function getInvoiceFinanceSnapshot(userId: string, referenceDate = 
     },
   };
 
-  const [openAggregate, monthTaxAggregate, overdueCount, recentInvoices] =
-    await prisma.$transaction([
-      prisma.invoice.aggregate({
-        where: openWhere,
-        _sum: {
-          amount: true,
-        },
-        _count: {
-          _all: true,
-        },
-      }),
-      prisma.invoice.aggregate({
-        where: {
-          userId,
-          issueDate: {
-            gte: monthStart,
-            lt: nextMonth,
-          },
-          status: {
-            not: InvoiceStatus.CANCELED,
-          },
-        },
-        _sum: {
-          taxAmount: true,
-        },
-      }),
-      prisma.invoice.count({
-        where: {
-          ...openWhere,
-          dueDate: {
-            lt: referenceDate,
-          },
-        },
-      }),
-      prisma.invoice.findMany({
-        where: openWhere,
+  const openAggregate = await prisma.invoice.aggregate({
+    where: openWhere,
+    _sum: {
+      amount: true,
+    },
+    _count: {
+      _all: true,
+    },
+  });
+  const monthTaxAggregate = await prisma.invoice.aggregate({
+    where: {
+      userId,
+      issueDate: {
+        gte: monthStart,
+        lt: nextMonth,
+      },
+      status: {
+        not: InvoiceStatus.CANCELED,
+      },
+    },
+    _sum: {
+      taxAmount: true,
+    },
+  });
+  const overdueCount = await prisma.invoice.count({
+    where: {
+      ...openWhere,
+      dueDate: {
+        lt: referenceDate,
+      },
+    },
+  });
+  const recentInvoices = await prisma.invoice.findMany({
+    where: openWhere,
+    select: {
+      id: true,
+      number: true,
+      series: true,
+      type: true,
+      status: true,
+      issueDate: true,
+      dueDate: true,
+      amount: true,
+      order: {
         select: {
           id: true,
-          number: true,
-          series: true,
-          type: true,
-          status: true,
-          issueDate: true,
-          dueDate: true,
-          amount: true,
-          order: {
-            select: {
-              id: true,
-              orderNumber: true,
-            },
-          },
-          supplier: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          orderNumber: true,
         },
-        orderBy: [{ dueDate: "asc" }, { issueDate: "desc" }],
-        take: 6,
-      }),
-    ]);
+      },
+      supplier: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: [{ dueDate: "asc" }, { issueDate: "desc" }],
+    take: 6,
+  });
 
   return {
     openCount: openAggregate._count._all,

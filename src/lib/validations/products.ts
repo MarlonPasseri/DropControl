@@ -2,18 +2,20 @@ import { ProductStatus } from "@prisma/client";
 import { z } from "zod";
 
 const optionalText = z
-  .string()
-  .trim()
-  .transform((value) => value || undefined);
+  .preprocess(
+    (value) => value ?? "",
+    z
+      .string()
+      .trim()
+      .transform((value) => value || undefined),
+  );
 
-const optionalUrl = z
-  .string()
-  .trim()
-  .transform((value) => value || undefined)
-  .pipe(z.string().url("Informe uma URL valida.").optional());
+const optionalUrl = optionalText.pipe(
+  z.string().url("Informe uma URL valida.").optional(),
+);
 
 export const productSchema = z.object({
-  id: z.string().trim().optional(),
+  id: optionalText,
   supplierId: z.string().trim().min(1, "Selecione um fornecedor."),
   name: z.string().trim().min(2, "Informe o nome do produto."),
   sku: z.string().trim().min(2, "Informe o SKU interno."),
