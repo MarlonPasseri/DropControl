@@ -30,6 +30,7 @@ function isVerifiedGoogleProfile(profile: unknown) {
 async function resolveGoogleUser(input: {
   email?: string | null;
   name?: string | null;
+  image?: string | null;
 }) {
   const email = normalizeEmail(input.email);
 
@@ -46,6 +47,7 @@ async function resolveGoogleUser(input: {
   return createUser({
     name: input.name?.trim() || fallbackNameFromEmail(email),
     email,
+    image: input.image ?? null,
     passwordHash: null,
   });
 }
@@ -74,6 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       user.id = dbUser.id;
       user.name = dbUser.name;
       user.email = dbUser.email;
+      user.image = dbUser.image;
 
       return true;
     },
@@ -85,6 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           params.token.sub = dbUser.id;
           params.token.name = dbUser.name;
           params.token.email = dbUser.email;
+          params.token.picture = dbUser.image ?? params.token.picture;
 
           return params.token;
         }

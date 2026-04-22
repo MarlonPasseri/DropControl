@@ -1,13 +1,50 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ReactNode } from "react";
 import { auth } from "@/auth";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { SignOutButton } from "@/components/sign-out-button";
+import { getUserById } from "@/lib/data/users";
 
 function getInitials(name?: string | null, email?: string | null) {
   const seed = name?.trim() || email?.trim() || "Operador";
   const [first = "", second = ""] = seed.split(/\s+/);
   return `${first[0] ?? ""}${second[0] ?? ""}`.toUpperCase() || "OP";
+}
+
+function UserAvatar({
+  name,
+  email,
+  image,
+  size = "md",
+}: {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  size?: "sm" | "md";
+}) {
+  const sizeClass = size === "sm" ? "h-9 w-9 text-sm" : "h-10 w-10 text-sm";
+
+  if (image) {
+    return (
+      <Image
+        src={image}
+        alt={`Foto de ${name || email || "usuario"}`}
+        width={size === "sm" ? 36 : 40}
+        height={size === "sm" ? 36 : 40}
+        unoptimized
+        className={`${sizeClass} rounded-full object-cover ring-1 ring-[var(--outline-variant)]`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full bg-[var(--primary-container)] font-bold text-[var(--primary)]`}
+    >
+      {getInitials(name, email)}
+    </div>
+  );
 }
 
 export async function AppShell({
@@ -20,8 +57,10 @@ export async function AppShell({
   children: ReactNode;
 }) {
   const session = await auth();
-  const userName = session?.user?.name ?? "Operador principal";
-  const userEmail = session?.user?.email ?? "Sessao protegida";
+  const profile = session?.user?.id ? await getUserById(session.user.id) : null;
+  const userName = profile?.name ?? session?.user?.name ?? "Operador principal";
+  const userEmail = profile?.email ?? session?.user?.email ?? "Sessao protegida";
+  const userImage = profile?.image ?? session?.user?.image;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -55,17 +94,18 @@ export async function AppShell({
         </div>
 
         <div className="mt-auto px-4 pt-6">
-          <div className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-3">
+          <Link
+            href="/profile"
+            className="block rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-3 transition hover:border-[var(--primary)]"
+          >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary-container)] text-sm font-bold text-[var(--primary)]">
-                {getInitials(session?.user?.name, session?.user?.email)}
-              </div>
+              <UserAvatar name={userName} email={userEmail} image={userImage} size="sm" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-950">{userName}</p>
                 <p className="truncate text-xs text-[var(--on-surface-variant)]">{userEmail}</p>
               </div>
             </div>
-          </div>
+          </Link>
 
           <div className="mt-4 space-y-1">
             <details className="group relative">
@@ -110,9 +150,9 @@ export async function AppShell({
                   <p className="text-xs font-semibold text-slate-900">{userName}</p>
                   <p className="text-xs text-[var(--on-surface-variant)]">{userEmail}</p>
                 </div>
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary-container)] text-sm font-bold text-[var(--primary)]">
-                  {getInitials(session?.user?.name, session?.user?.email)}
-                </div>
+                <Link href="/profile" aria-label="Abrir perfil">
+                  <UserAvatar name={userName} email={userEmail} image={userImage} size="sm" />
+                </Link>
               </div>
             </div>
           </div>

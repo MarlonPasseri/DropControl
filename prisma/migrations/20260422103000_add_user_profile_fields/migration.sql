@@ -1,0 +1,5 @@
+ALTER TABLE "users"
+ADD COLUMN "image" TEXT,
+ADD COLUMN "phone" VARCHAR(40),
+ADD COLUMN "role" VARCHAR(80),
+ADD COLUMN "company" VARCHAR(120);

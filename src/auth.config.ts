@@ -9,6 +9,7 @@ const protectedPrefixes = [
   "/invoices",
   "/finance",
   "/tasks",
+  "/profile",
 ];
 
 export const authConfig = {
@@ -44,6 +45,7 @@ export const authConfig = {
         token.sub = user.id;
         token.name = user.name;
         token.email = user.email;
+        token.picture = user.image;
       }
 
       return token;
@@ -54,6 +56,8 @@ export const authConfig = {
         session.user.name =
           typeof token.name === "string" ? token.name : session.user.name ?? "";
         session.user.email = token.email ?? "";
+        session.user.image =
+          typeof token.picture === "string" ? token.picture : session.user.image ?? null;
       }
 
       return session;

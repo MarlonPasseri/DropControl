@@ -13,6 +13,7 @@ const iconMap: Record<string, string> = {
   "/invoices": "receipt",
   "/finance": "payments",
   "/tasks": "assignment",
+  "/profile": "account_circle",
 };
 
 export function SidebarNav() {
