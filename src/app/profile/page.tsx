@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { AppPanel, NoticeBanner } from "@/components/mvp-ui";
 import { getUserById } from "@/lib/data/users";
 import { requireUser } from "@/lib/require-user";
+import { getRoleLabel, resolveAppRoleForUser } from "@/lib/security/roles";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -34,6 +35,8 @@ export default async function ProfilePage({ searchParams }: PageProps) {
   if (!user) {
     redirect("/login");
   }
+
+  const accessRole = await resolveAppRoleForUser(user);
 
   return (
     <AppShell
@@ -68,9 +71,11 @@ export default async function ProfilePage({ searchParams }: PageProps) {
 
             <div className="mt-6 grid w-full gap-3 text-left">
               <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3">
-                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Cargo</p>
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">
+                  Nivel de acesso
+                </p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">
-                  {user.role || "Nao informado"}
+                  {getRoleLabel(accessRole)}
                 </p>
               </div>
               <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3">
@@ -149,18 +154,6 @@ export default async function ProfilePage({ searchParams }: PageProps) {
               />
             </label>
 
-            <label className="block">
-              <span className={labelClass}>Cargo</span>
-              <input
-                type="text"
-                name="role"
-                maxLength={80}
-                defaultValue={user.role ?? ""}
-                placeholder="Gestor de operacao"
-                className={inputClass}
-              />
-            </label>
-
             <label className="block md:col-span-2">
               <span className={labelClass}>Empresa</span>
               <input
@@ -172,6 +165,11 @@ export default async function ProfilePage({ searchParams }: PageProps) {
                 className={inputClass}
               />
             </label>
+
+            <div className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-[var(--on-surface-variant)] md:col-span-2">
+              Seu nivel de acesso e <strong className="text-slate-950">{getRoleLabel(accessRole)}</strong>.
+              Essa permissao agora e controlada separadamente do perfil para reduzir risco de acesso indevido.
+            </div>
 
             <div className="md:col-span-2">
               <button

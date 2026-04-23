@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navigationItems } from "@/lib/mvp-data";
+import type { NavigationItem } from "@/lib/mvp-data";
 
 const iconMap: Record<string, string> = {
   "/dashboard": "dashboard",
@@ -17,12 +17,12 @@ const iconMap: Record<string, string> = {
   "/profile": "account_circle",
 };
 
-export function SidebarNav() {
+export function SidebarNav({ items }: { items: NavigationItem[] }) {
   const pathname = usePathname();
 
   return (
     <nav className="mt-6 flex-1 space-y-1 px-3">
-      {navigationItems.map((item) => {
+      {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (

@@ -45,11 +45,18 @@ Esta aplicacao agora tem uma base melhor de seguranca de rede e borda, mas dados
 - Tela protegida `/security` para consulta operacional.
 - CSP, security headers e endpoint de reporte.
 - Deploy Docker com proxy, rede privada para banco e containers com privilegios reduzidos.
+- Papeis basicos de acesso por usuario:
+  - primeiro usuario da base assume `ADMIN` automaticamente;
+  - novos cadastros entram como `OPERATOR`;
+  - `/security` ficou restrita a administradores;
+  - o nivel de acesso deixou de ser editavel no perfil;
+  - administradores podem promover ou reduzir usuarios direto em `/security`;
+  - a interface impede remover o proprio acesso administrativo ou deixar o ambiente sem admin.
 
 ## Proximo incremento recomendado no codigo
 
-1. Adicionar papeis/permissoes por usuario.
-2. Adicionar MFA.
-3. Mover uploads de perfil para storage privado com URLs assinadas.
-4. Adicionar testes automatizados para autorizacao e isolamento por usuario.
-5. Adicionar alertas automaticos para eventos `WARN`, `ERROR` e `CRITICAL`.
+1. Adicionar MFA, priorizando administradores.
+2. Adicionar testes automatizados para autorizacao e isolamento por usuario.
+3. Adicionar revisao e revogacao de sessoes ativas.
+4. Separar permissoes finas por modulo quando houver mais de um perfil operacional.
+5. Integrar alertas automaticos com resposta operacional para eventos `WARN`, `ERROR` e `CRITICAL`.

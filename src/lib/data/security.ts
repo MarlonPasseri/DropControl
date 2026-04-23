@@ -1,15 +1,22 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getSecurityOverview(userId: string, email: string) {
+export async function getSecurityOverview(input: {
+  userId: string;
+  email: string;
+  scope?: "account" | "global";
+}) {
+  const { userId, email, scope = "account" } = input;
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const securityWhere = {
-    OR: [{ userId }, { email }],
-  };
+  const isGlobalScope = scope === "global";
+  const securityWhere = isGlobalScope
+    ? undefined
+    : {
+        OR: [{ userId }, { email }],
+      };
+  const auditWhere = isGlobalScope ? undefined : { actorUserId: userId };
 
   const auditLogs = await prisma.auditLog.findMany({
-    where: {
-      actorUserId: userId,
-    },
+    where: auditWhere,
     orderBy: {
       createdAt: "desc",
     },
@@ -24,7 +31,7 @@ export async function getSecurityOverview(userId: string, email: string) {
   });
   const auditCount24h = await prisma.auditLog.count({
     where: {
-      actorUserId: userId,
+      ...(auditWhere ?? {}),
       createdAt: {
         gte: since,
       },
@@ -32,7 +39,7 @@ export async function getSecurityOverview(userId: string, email: string) {
   });
   const warningCount24h = await prisma.securityEvent.count({
     where: {
-      ...securityWhere,
+      ...(securityWhere ?? {}),
       severity: {
         in: ["WARN", "ERROR", "CRITICAL"],
       },
@@ -43,7 +50,7 @@ export async function getSecurityOverview(userId: string, email: string) {
   });
   const failedSignIns24h = await prisma.securityEvent.count({
     where: {
-      ...securityWhere,
+      ...(securityWhere ?? {}),
       type: {
         in: ["SIGN_IN_FAILED", "SIGN_IN_RATE_LIMITED"],
       },
@@ -59,5 +66,6 @@ export async function getSecurityOverview(userId: string, email: string) {
     auditCount24h,
     warningCount24h,
     failedSignIns24h,
+    scope,
   };
 }

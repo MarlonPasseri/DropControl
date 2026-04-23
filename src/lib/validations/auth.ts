@@ -44,12 +44,6 @@ export const profileSchema = z.object({
     .max(40, "O telefone precisa ter no maximo 40 caracteres.")
     .optional()
     .transform((value) => value || null),
-  role: z
-    .string()
-    .trim()
-    .max(80, "O cargo precisa ter no maximo 80 caracteres.")
-    .optional()
-    .transform((value) => value || null),
   company: z
     .string()
     .trim()

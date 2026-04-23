@@ -13,6 +13,7 @@ import {
   getRequestContextFromHeaders,
   recordSecurityEvent,
 } from "@/lib/security/audit";
+import { resolveAppRoleForUser } from "@/lib/security/roles";
 import { signInSchema } from "@/lib/validations/auth";
 
 function normalizeEmail(email: string | null | undefined) {
@@ -79,10 +80,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return false;
       }
 
+      const appRole = await resolveAppRoleForUser(dbUser);
       user.id = dbUser.id;
       user.name = dbUser.name;
       user.email = dbUser.email;
       user.image = dbUser.image;
+      user.role = appRole;
 
       return true;
     },
@@ -91,10 +94,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const dbUser = await getUserByEmail(params.user.email);
 
         if (dbUser) {
+          const appRole = await resolveAppRoleForUser(dbUser);
           params.token.sub = dbUser.id;
           params.token.name = dbUser.name;
           params.token.email = dbUser.email;
           params.token.picture = dbUser.image ?? params.token.picture;
+          params.token.role = appRole;
 
           return params.token;
         }
@@ -191,6 +196,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           name: user.name,
           email: user.email,
+          role: await resolveAppRoleForUser(user),
         };
       },
     }),

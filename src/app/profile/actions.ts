@@ -38,7 +38,6 @@ export async function saveProfile(formData: FormData) {
   const parsed = profileSchema.safeParse({
     name: formData.get("name"),
     phone: formData.get("phone"),
-    role: formData.get("role"),
     company: formData.get("company"),
   });
 

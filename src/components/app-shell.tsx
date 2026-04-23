@@ -5,6 +5,8 @@ import { auth } from "@/auth";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getUserById } from "@/lib/data/users";
+import { getNavigationItemsForRole } from "@/lib/mvp-data";
+import { getRoleLabel, resolveAppRoleForUser } from "@/lib/security/roles";
 
 function getInitials(name?: string | null, email?: string | null) {
   const seed = name?.trim() || email?.trim() || "Operador";
@@ -61,6 +63,8 @@ export async function AppShell({
   const userName = profile?.name ?? session?.user?.name ?? "Operador principal";
   const userEmail = profile?.email ?? session?.user?.email ?? "Sessao protegida";
   const userImage = profile?.image ?? session?.user?.image;
+  const userRole = profile ? await resolveAppRoleForUser(profile) : "OPERATOR";
+  const navigationItems = getNavigationItemsForRole(userRole);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -81,7 +85,7 @@ export async function AppShell({
           </div>
         </div>
 
-        <SidebarNav />
+        <SidebarNav items={navigationItems} />
 
         <div className="mt-4 px-4">
           <Link
@@ -148,7 +152,9 @@ export async function AppShell({
               <div className="flex items-center gap-3">
                 <div className="hidden text-right sm:block">
                   <p className="text-xs font-semibold text-slate-900">{userName}</p>
-                  <p className="text-xs text-[var(--on-surface-variant)]">{userEmail}</p>
+                  <p className="text-xs text-[var(--on-surface-variant)]">
+                    {getRoleLabel(userRole)} - {userEmail}
+                  </p>
                 </div>
                 <Link href="/profile" aria-label="Abrir perfil">
                   <UserAvatar name={userName} email={userEmail} image={userImage} size="sm" />

@@ -1,8 +1,11 @@
+import type { AppRole } from "@/lib/security/roles";
+
 export type NavigationItem = {
   href: string;
   label: string;
   shortLabel: string;
   accent: string;
+  roles?: AppRole[];
 };
 
 export type MetricCard = {
@@ -87,9 +90,19 @@ export const navigationItems: NavigationItem[] = [
   { href: "/invoices", label: "Notas fiscais", shortLabel: "NF", accent: "bg-cyan-500" },
   { href: "/finance", label: "Financeiro", shortLabel: "Fin", accent: "bg-emerald-500" },
   { href: "/tasks", label: "Tarefas", shortLabel: "Task", accent: "bg-orange-500" },
-  { href: "/security", label: "Seguranca", shortLabel: "Seg", accent: "bg-red-500" },
+  {
+    href: "/security",
+    label: "Seguranca",
+    shortLabel: "Seg",
+    accent: "bg-red-500",
+    roles: ["ADMIN"],
+  },
   { href: "/profile", label: "Perfil", shortLabel: "Perfil", accent: "bg-slate-500" },
 ];
+
+export function getNavigationItemsForRole(role: AppRole) {
+  return navigationItems.filter((item) => !item.roles || item.roles.includes(role));
+}
 
 export const dashboardMetrics: MetricCard[] = [
   {
