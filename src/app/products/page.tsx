@@ -59,6 +59,12 @@ function buildQueryString(
   return query ? `/products?${query}` : "/products";
 }
 
+const inputClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] focus:border-[var(--primary)]";
+const selectClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 focus:border-[var(--primary)]";
+const labelClass = "mb-2 block text-sm font-medium text-slate-700";
+
 export default async function ProductsPage({ searchParams }: PageProps) {
   const user = await requireUser();
   const params = (await searchParams) ?? {};
@@ -116,6 +122,123 @@ export default async function ProductsPage({ searchParams }: PageProps) {
       title="Produtos"
       description="Cadastro real de produtos com margem calculada, filtro por status e vinculo com fornecedores da conta logada."
     >
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <AppPanel title="Radar de produtos" eyebrow="Leitura do catalogo">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                  Curadoria do catalogo
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {statusFilter
+                    ? `Voce esta olhando a faixa ${getProductStatusLabel(statusFilter).toLowerCase()}.`
+                    : "Use esta base para priorizar produtos ativos, proteger margem e manter fornecedores bem vinculados."}
+                  {query ? ` Busca ativa: "${query}".` : ""}
+                  {selectedProduct
+                    ? ` Edicao em andamento para ${selectedProduct.name}.`
+                    : " Formulario pronto para novos cadastros."}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={buildQueryString(params, {
+                    status: ProductStatus.ACTIVE,
+                    edit: undefined,
+                    page: undefined,
+                    success: undefined,
+                    error: undefined,
+                  })}
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Ver ativos
+                </Link>
+                <Link
+                  href={buildQueryString(params, {
+                    status: ProductStatus.WINNER,
+                    edit: undefined,
+                    page: undefined,
+                    success: undefined,
+                    error: undefined,
+                  })}
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Ver vencedores
+                </Link>
+                <Link
+                  href={buildQueryString(params, {
+                    status: ProductStatus.PAUSED,
+                    edit: undefined,
+                    page: undefined,
+                    success: undefined,
+                    error: undefined,
+                  })}
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Ver pausados
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Ativos</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{metrics.activeCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Produtos em operacao agora</p>
+              </div>
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Margem baixa</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{metrics.lowMarginCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Abaixo de R$ 40 estimados</p>
+              </div>
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Formulario</p>
+                <p className="mt-2 text-sm font-bold text-slate-950">
+                  {selectedProduct ? selectedProduct.name : "Novo produto"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {selectedProduct ? "Revise precos, links e status" : "Pronto para ampliar o catalogo"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </AppPanel>
+
+        <AppPanel title="Fluxo rapido" eyebrow="Acoes recorrentes">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              href={buildQueryString(params, {
+                edit: undefined,
+                success: undefined,
+                error: undefined,
+              })}
+              className="rounded-lg bg-[var(--primary)] px-4 py-4 text-sm font-semibold text-[var(--on-primary)] shadow-[0_16px_36px_rgba(23,107,99,0.22)] hover:bg-[var(--primary-dim)]"
+            >
+              Novo produto
+            </Link>
+            <Link
+              href="/suppliers"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Rever fornecedores
+            </Link>
+            <Link
+              href="/orders"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Ver pedidos ligados
+            </Link>
+            <Link
+              href="/tasks"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Abrir tarefas
+            </Link>
+          </div>
+        </AppPanel>
+      </section>
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {productMetrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} />
@@ -133,19 +256,19 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por nome, SKU ou categoria"
-              className="min-w-0 flex-1 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={`min-w-0 flex-1 ${inputClass}`}
             />
             {statusFilter ? <input type="hidden" name="status" value={statusFilter} /> : null}
             <button
               type="submit"
-              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+              className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(23,107,99,0.18)] hover:bg-[var(--primary-dim)]"
             >
               Buscar
             </button>
             {(query || statusFilter || editId) && (
               <Link
                 href="/products"
-                className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
               >
                 Limpar
               </Link>
@@ -159,10 +282,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 edit: undefined,
                 page: undefined,
               })}
-              className={`rounded-md border px-3 py-2 text-sm font-medium ${
+              className={`rounded-full border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+                  : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
               }`}
             >
               Todos
@@ -175,10 +298,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                   edit: undefined,
                   page: undefined,
                 })}
-                className={`rounded-md border px-3 py-2 text-sm font-medium ${
+                className={`rounded-full border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
                     ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+                    : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                 }`}
               >
                 {option.label}
@@ -186,6 +309,21 @@ export default async function ProductsPage({ searchParams }: PageProps) {
             ))}
           </div>
         </div>
+
+        {(query || statusFilter) && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {query ? (
+              <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                Busca: {query}
+              </span>
+            ) : null}
+            {statusFilter ? (
+              <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                Status: {getProductStatusLabel(statusFilter)}
+              </span>
+            ) : null}
+          </div>
+        )}
       </AppPanel>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
@@ -199,7 +337,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 success: undefined,
                 error: undefined,
               })}
-              className="signature-gradient rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.14)]"
+              className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)] hover:bg-[var(--primary-dim)]"
             >
               Novo produto
             </Link>
@@ -215,51 +353,74 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 endIndex={paginatedProducts.endIndex}
                 totalItems={paginatedProducts.totalItems}
               />
-              <div className="overflow-x-auto rounded-lg border border-slate-200">
-              <table className="min-w-[760px] divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Produto</th>
-                    <th className="px-4 py-3 font-medium">Fornecedor</th>
-                    <th className="px-4 py-3 font-medium">Preco</th>
-                    <th className="px-4 py-3 font-medium">Margem</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {paginatedProducts.items.map((product) => (
-                    <tr key={product.id}>
-                      <td className="px-4 py-4 align-top">
-                        <Link
-                          href={buildQueryString(params, {
-                            edit: product.id,
-                            success: undefined,
-                            error: undefined,
-                          })}
-                          className="block rounded-lg transition hover:bg-slate-50"
-                        >
-                          <p className="font-medium text-slate-950">{product.name}</p>
-                          <p className="mt-1 text-slate-500">
-                            {product.category || "Sem categoria"} - {product.sku}
-                          </p>
-                          <p className="mt-2 text-xs text-slate-400">
-                            {product._count.orders} pedidos - {product._count.tasks} tarefas
-                          </p>
-                        </Link>
-                      </td>
-                      <td className="px-4 py-4 text-slate-600">{product.supplier.name}</td>
-                      <td className="px-4 py-4 text-slate-600">{formatCurrency(product.salePrice)}</td>
-                      <td className="px-4 py-4 font-medium text-slate-950">
-                        {formatCurrency(product.estimatedMargin)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <StatusPill label={getProductStatusLabel(product.status)} />
-                      </td>
+              <div className="overflow-x-auto rounded-lg border border-[var(--outline-variant)]">
+                <table className="min-w-[760px] divide-y divide-slate-200 text-sm">
+                  <thead className="bg-[var(--surface-container-low)] text-left text-slate-600">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Produto</th>
+                      <th className="px-4 py-3 font-medium">Fornecedor</th>
+                      <th className="px-4 py-3 font-medium">Preco</th>
+                      <th className="px-4 py-3 font-medium">Margem</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {paginatedProducts.items.map((product) => (
+                      <tr
+                        key={product.id}
+                        className="odd:bg-white even:bg-slate-50/55 hover:bg-[var(--surface-container-low)]"
+                      >
+                        <td className="px-4 py-4 align-top">
+                          <Link
+                            href={buildQueryString(params, {
+                              edit: product.id,
+                              success: undefined,
+                              error: undefined,
+                            })}
+                            className="block rounded-lg transition hover:text-[var(--primary)]"
+                          >
+                            <p className="font-medium text-slate-950">{product.name}</p>
+                            <p className="mt-1 text-slate-500">
+                              {product.category || "Sem categoria"} - {product.sku}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <span className="rounded-full bg-[var(--surface-container-low)] px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                {product._count.orders} pedidos
+                              </span>
+                              <span className="rounded-full bg-[var(--surface-container-low)] px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                {product._count.tasks} tarefas
+                              </span>
+                            </div>
+                          </Link>
+                        </td>
+                        <td className="px-4 py-4 align-top text-slate-600">
+                          <p>{product.supplier.name}</p>
+                          <p className="mt-1 text-xs text-slate-400">Parceiro vinculado</p>
+                        </td>
+                        <td className="px-4 py-4 align-top text-slate-600">
+                          <p className="font-semibold text-slate-950">
+                            {formatCurrency(product.salePrice)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Ticket de venda
+                          </p>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <p className="font-semibold text-slate-950">
+                            {formatCurrency(product.estimatedMargin)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Custo + frete descontados
+                          </p>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <StatusPill label={getProductStatusLabel(product.status)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <PaginationControls
                 page={paginatedProducts.page}
                 totalPages={paginatedProducts.totalPages}
@@ -285,47 +446,64 @@ export default async function ProductsPage({ searchParams }: PageProps) {
             <form action={saveProduct} className="grid gap-4 md:grid-cols-2">
               {selectedProduct ? <input type="hidden" name="id" value={selectedProduct.id} /> : null}
 
+              <div className="col-span-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-4 text-sm text-slate-700">
+                {selectedProduct ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="font-semibold text-slate-950">
+                      Editando {selectedProduct.name}
+                    </span>
+                    <StatusPill label={getProductStatusLabel(selectedProduct.status)} />
+                    <span className="text-xs text-slate-500">
+                      Margem atual {formatCurrency(selectedProduct.estimatedMargin)}
+                    </span>
+                  </div>
+                ) : (
+                  <p>
+                    Comece pelo essencial: nome, SKU, fornecedor e precos. O app recalcula a
+                    margem estimada automaticamente para voce decidir o status certo do produto.
+                  </p>
+                )}
+              </div>
+
               <label className="col-span-full">
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Nome do produto
-                </span>
+                <span className={labelClass}>Nome do produto</span>
                 <input
                   type="text"
                   name="name"
                   required
                   defaultValue={selectedProduct?.name ?? ""}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">SKU interno</span>
+                <span className={labelClass}>SKU interno</span>
                 <input
                   type="text"
                   name="sku"
                   required
                   defaultValue={selectedProduct?.sku ?? ""}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">Categoria</span>
+                <span className={labelClass}>Categoria</span>
                 <input
                   type="text"
                   name="category"
                   defaultValue={selectedProduct?.category ?? ""}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label className="col-span-full">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Fornecedor</span>
+                <span className={labelClass}>Fornecedor</span>
                 <select
                   name="supplierId"
                   required
                   defaultValue={selectedProduct?.supplierId ?? supplierOptions[0]?.id}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={selectClass}
                 >
                   {supplierOptions.map((supplier) => (
                     <option key={supplier.id} value={supplier.id}>
@@ -336,33 +514,29 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               </label>
 
               <label className="col-span-full">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Link da loja</span>
+                <span className={labelClass}>Link da loja</span>
                 <input
                   type="url"
                   name="storeLink"
                   defaultValue={selectedProduct?.storeLink ?? ""}
                   placeholder="https://sualoja.com/produto"
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label className="col-span-full">
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Link do fornecedor
-                </span>
+                <span className={labelClass}>Link do fornecedor</span>
                 <input
                   type="url"
                   name="supplierLink"
                   defaultValue={selectedProduct?.supplierLink ?? ""}
                   placeholder="https://fornecedor.com/item"
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Custo do produto
-                </span>
+                <span className={labelClass}>Custo do produto</span>
                 <input
                   type="number"
                   name="costPrice"
@@ -370,14 +544,12 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                   step="0.01"
                   required
                   defaultValue={selectedProduct?.costPrice.toString() ?? ""}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Custo do frete
-                </span>
+                <span className={labelClass}>Custo do frete</span>
                 <input
                   type="number"
                   name="shippingCost"
@@ -385,14 +557,12 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                   step="0.01"
                   required
                   defaultValue={selectedProduct?.shippingCost.toString() ?? ""}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Preco de venda
-                </span>
+                <span className={labelClass}>Preco de venda</span>
                 <input
                   type="number"
                   name="salePrice"
@@ -400,17 +570,17 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                   step="0.01"
                   required
                   defaultValue={selectedProduct?.salePrice.toString() ?? ""}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">Status</span>
+                <span className={labelClass}>Status</span>
                 <select
                   name="status"
                   required
                   defaultValue={selectedProduct?.status ?? ProductStatus.TESTING}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={selectClass}
                 >
                   {productStatusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -421,18 +591,16 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               </label>
 
               <label className="col-span-full">
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Observacoes
-                </span>
+                <span className={labelClass}>Observacoes</span>
                 <textarea
                   name="notes"
                   rows={4}
                   defaultValue={selectedProduct?.notes ?? ""}
-                  className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                  className={inputClass}
                 />
               </label>
 
-              <div className="col-span-full rounded-lg bg-[var(--surface-container-low)] px-4 py-3 text-sm text-[var(--on-surface-variant)]">
+              <div className="col-span-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-sm text-[var(--on-surface-variant)]">
                 A margem estimada e recalculada automaticamente com base em preco de
                 venda - custo do produto - custo do frete.
               </div>
@@ -440,7 +608,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               <div className="col-span-full flex flex-wrap gap-3">
                 <button
                   type="submit"
-                  className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+                  className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(23,107,99,0.18)] hover:bg-[var(--primary-dim)]"
                 >
                   {selectedProduct ? "Salvar alteracoes" : "Criar produto"}
                 </button>
@@ -453,14 +621,14 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                         success: undefined,
                         error: undefined,
                       })}
-                      className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                      className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
                     >
                       Novo cadastro
                     </Link>
                     <button
                       type="submit"
                       formAction={removeProduct}
-                      className="rounded-lg border border-rose-200 px-4 py-3 text-sm font-medium text-rose-700"
+                      className="rounded-lg border border-[var(--error-container)] bg-white px-4 py-3 text-sm font-medium text-rose-700 hover:border-[var(--error)]"
                     >
                       Excluir produto
                     </button>

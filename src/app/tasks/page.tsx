@@ -56,6 +56,12 @@ function buildQueryString(
   return query ? `/tasks?${query}` : "/tasks";
 }
 
+const inputClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] focus:border-[var(--primary)]";
+const selectClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 focus:border-[var(--primary)]";
+const labelClass = "mb-2 block text-sm font-medium text-slate-700";
+
 export default async function TasksPage({ searchParams }: PageProps) {
   const user = await requireUser();
   const params = (await searchParams) ?? {};
@@ -87,6 +93,9 @@ export default async function TasksPage({ searchParams }: PageProps) {
     editId ? getTaskById(user.id, editId) : Promise.resolve(null),
   ]);
   const paginatedTasks = paginateItems(tasks, page, 9);
+  const selectedTaskProduct = selectedTask?.relatedProductId
+    ? products.find((product) => product.id === selectedTask.relatedProductId)
+    : null;
 
   const taskMetrics = [
     {
@@ -120,6 +129,117 @@ export default async function TasksPage({ searchParams }: PageProps) {
       title="Tarefas"
       description="Quadro operacional real com filtros por status e prioridade, alem de vinculo opcional a produtos."
     >
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <AppPanel title="Radar das tarefas" eyebrow="Cadencia da operacao">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                  Ritmo do time
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {statusFilter
+                    ? `Voce esta olhando ${taskStatusOptions.find((option) => option.value === statusFilter)?.label?.toLowerCase()}.`
+                    : "Use este quadro para puxar o proximo trabalho, proteger prazos e vincular demandas aos produtos certos."}
+                  {priorityFilter
+                    ? ` Prioridade ativa: ${getTaskPriorityLabel(priorityFilter).toLowerCase()}.`
+                    : ""}
+                  {query ? ` Busca ativa: "${query}".` : ""}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={buildQueryString(params, {
+                    status: TaskStatus.PENDING,
+                    edit: undefined,
+                    page: undefined,
+                    success: undefined,
+                    error: undefined,
+                  })}
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Ver pendentes
+                </Link>
+                <Link
+                  href={buildQueryString(params, {
+                    priority: TaskPriority.HIGH,
+                    edit: undefined,
+                    page: undefined,
+                    success: undefined,
+                    error: undefined,
+                  })}
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Alta prioridade
+                </Link>
+                <Link
+                  href="/products"
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Rever produtos
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Pendentes</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{metrics.pendingCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Fila pronta para puxar</p>
+              </div>
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Atrasadas</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{metrics.overdueCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Prazo ja ultrapassado</p>
+              </div>
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Formulario</p>
+                <p className="mt-2 text-sm font-bold text-slate-950">
+                  {selectedTask ? selectedTask.title : "Nova tarefa"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {selectedTask ? "Revise prazo, prioridade e vinculos" : "Pronto para organizar a fila"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </AppPanel>
+
+        <AppPanel title="Atalhos de execucao" eyebrow="Acoes do operador">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              href={buildQueryString(params, {
+                edit: undefined,
+                success: undefined,
+                error: undefined,
+              })}
+              className="rounded-lg bg-[var(--primary)] px-4 py-4 text-sm font-semibold text-[var(--on-primary)] shadow-[0_16px_36px_rgba(23,107,99,0.22)] hover:bg-[var(--primary-dim)]"
+            >
+              Nova tarefa
+            </Link>
+            <Link
+              href="/orders"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Ver pedidos
+            </Link>
+            <Link
+              href="/products"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Abrir produtos
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Voltar ao dashboard
+            </Link>
+          </div>
+        </AppPanel>
+      </section>
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {taskMetrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} />
@@ -137,12 +257,12 @@ export default async function TasksPage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por titulo, responsavel ou descricao"
-              className="min-w-0 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={inputClass}
             />
             <select
               name="priority"
               defaultValue={priorityFilter ?? ""}
-              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={selectClass}
             >
               <option value="">Todas as prioridades</option>
               {taskPriorityOptions.map((option) => (
@@ -154,19 +274,39 @@ export default async function TasksPage({ searchParams }: PageProps) {
             {statusFilter ? <input type="hidden" name="status" value={statusFilter} /> : null}
             <button
               type="submit"
-              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+              className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(23,107,99,0.18)] hover:bg-[var(--primary-dim)]"
             >
               Filtrar
             </button>
             {(query || statusFilter || priorityFilter || editId) && (
               <Link
                 href="/tasks"
-                className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
               >
                 Limpar
               </Link>
             )}
           </form>
+
+          {(query || statusFilter || priorityFilter) && (
+            <div className="flex flex-wrap gap-2">
+              {query ? (
+                <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                  Busca: {query}
+                </span>
+              ) : null}
+              {statusFilter ? (
+                <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                  Status: {taskStatusOptions.find((option) => option.value === statusFilter)?.label}
+                </span>
+              ) : null}
+              {priorityFilter ? (
+                <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                  Prioridade: {getTaskPriorityLabel(priorityFilter)}
+                </span>
+              ) : null}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <Link
@@ -175,10 +315,10 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 edit: undefined,
                 page: undefined,
               })}
-              className={`rounded-md border px-3 py-2 text-sm font-medium ${
+              className={`rounded-full border px-3 py-2 text-sm font-medium ${
                 !statusFilter
                   ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+                  : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
               }`}
             >
               Todas
@@ -191,10 +331,10 @@ export default async function TasksPage({ searchParams }: PageProps) {
                   edit: undefined,
                   page: undefined,
                 })}
-                className={`rounded-md border px-3 py-2 text-sm font-medium ${
+                className={`rounded-full border px-3 py-2 text-sm font-medium ${
                   statusFilter === option.value
                     ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-transparent bg-[var(--surface-container-low)] text-[var(--on-secondary-container)]"
+                    : "border-[var(--outline-variant)] bg-white text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                 }`}
               >
                 {option.label}
@@ -215,7 +355,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 success: undefined,
                 error: undefined,
               })}
-              className="signature-gradient rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.14)]"
+              className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)] hover:bg-[var(--primary-dim)]"
             >
               Nova tarefa
             </Link>
@@ -232,57 +372,64 @@ export default async function TasksPage({ searchParams }: PageProps) {
                 totalItems={paginatedTasks.totalItems}
               />
               <div className="grid gap-4 xl:grid-cols-3">
-              {taskStatusOptions.map((column) => {
-                const columnTasks = paginatedTasks.items.filter((task) => task.status === column.value);
+                {taskStatusOptions.map((column) => {
+                  const columnTasks = paginatedTasks.items.filter((task) => task.status === column.value);
 
-                return (
-                  <div
-                    key={column.value}
-                    className="rounded-lg bg-[var(--surface-container-low)] p-3"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-slate-950">{column.label}</h3>
-                      <StatusPill label={column.label} />
-                    </div>
-                    <div className="space-y-3">
-                      {columnTasks.length === 0 ? (
-                        <div className="rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-500">
-                          Sem tarefas nesta coluna.
+                  return (
+                    <div
+                      key={column.value}
+                      className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] p-3"
+                    >
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-950">{column.label}</h3>
+                          <p className="mt-1 text-xs text-slate-500">{columnTasks.length} itens</p>
                         </div>
-                      ) : (
-                        columnTasks.map((task) => (
-                          <Link
-                            key={task.id}
-                            href={buildQueryString(params, {
-                              edit: task.id,
-                              success: undefined,
-                              error: undefined,
-                            })}
-                            className="block rounded-lg bg-[var(--surface-container-lowest)] p-4 shadow-[0_12px_30px_rgba(42,52,57,0.06)] transition hover:bg-[var(--surface-container-low)]"
-                          >
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-slate-950">{task.title}</p>
-                              <StatusPill label={getTaskPriorityLabel(task.priority)} />
-                            </div>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                              {task.description || "Sem descricao."}
-                            </p>
-                            <div className="mt-3 space-y-1 text-xs font-medium text-slate-500">
-                              <p>{formatDateTime(task.dueDate)}</p>
-                              <p>{task.assigneeName || "Sem responsavel"}</p>
-                              <p>
+                        <StatusPill label={column.label} />
+                      </div>
+                      <div className="space-y-3">
+                        {columnTasks.length === 0 ? (
+                          <div className="rounded-lg border border-dashed border-[var(--outline-variant)] bg-white px-3 py-4 text-sm text-slate-500">
+                            Sem tarefas nesta coluna.
+                          </div>
+                        ) : (
+                          columnTasks.map((task) => (
+                            <Link
+                              key={task.id}
+                              href={buildQueryString(params, {
+                                edit: task.id,
+                                success: undefined,
+                                error: undefined,
+                              })}
+                              className="block rounded-lg border border-transparent bg-white p-4 shadow-[0_12px_30px_rgba(42,52,57,0.06)] transition hover:border-[var(--primary)] hover:bg-[var(--surface-container-lowest)]"
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-slate-950">{task.title}</p>
+                                <StatusPill label={getTaskPriorityLabel(task.priority)} />
+                              </div>
+                              <p className="mt-2 text-sm leading-6 text-slate-600">
+                                {task.description || "Sem descricao."}
+                              </p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <span className="rounded-full bg-[var(--surface-container-low)] px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                  {task.dueDate ? formatDateTime(task.dueDate) : "Sem prazo"}
+                                </span>
+                                <span className="rounded-full bg-[var(--surface-container-low)] px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                  {task.assigneeName || "Sem responsavel"}
+                                </span>
+                              </div>
+                              <p className="mt-3 text-xs font-medium text-slate-500">
                                 {task.relatedProduct
                                   ? `${task.relatedProduct.name} - ${task.relatedProduct.sku}`
                                   : "Sem produto vinculado"}
                               </p>
-                            </div>
-                          </Link>
-                        ))
-                      )}
+                            </Link>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
               </div>
               <PaginationControls
                 page={paginatedTasks.page}
@@ -306,34 +453,55 @@ export default async function TasksPage({ searchParams }: PageProps) {
           <form action={saveTask} className="grid gap-4 md:grid-cols-2">
             {selectedTask ? <input type="hidden" name="id" value={selectedTask.id} /> : null}
 
+            <div className="col-span-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-4 text-sm text-slate-700">
+              {selectedTask ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="font-semibold text-slate-950">
+                    Editando {selectedTask.title}
+                  </span>
+                  <StatusPill label={getTaskPriorityLabel(selectedTask.priority)} />
+                  <span className="text-xs text-slate-500">
+                    {selectedTaskProduct
+                      ? `Ligada a ${selectedTaskProduct.name}`
+                      : "Sem produto vinculado"}
+                  </span>
+                </div>
+              ) : (
+                <p>
+                  Defina titulo, prioridade e prazo. Se a tarefa depender de um produto, vincule
+                  agora para facilitar o acompanhamento nas outras telas.
+                </p>
+              )}
+            </div>
+
             <label className="col-span-full">
-              <span className="mb-2 block text-sm font-medium text-slate-700">Titulo</span>
+              <span className={labelClass}>Titulo</span>
               <input
                 type="text"
                 name="title"
                 required
                 defaultValue={selectedTask?.title ?? ""}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={inputClass}
               />
             </label>
 
             <label className="col-span-full">
-              <span className="mb-2 block text-sm font-medium text-slate-700">Descricao</span>
+              <span className={labelClass}>Descricao</span>
               <textarea
                 name="description"
                 rows={4}
                 defaultValue={selectedTask?.description ?? ""}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={inputClass}
               />
             </label>
 
             <label>
-              <span className="mb-2 block text-sm font-medium text-slate-700">Prioridade</span>
+              <span className={labelClass}>Prioridade</span>
               <select
                 name="priority"
                 required
                 defaultValue={selectedTask?.priority ?? TaskPriority.MEDIUM}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={selectClass}
               >
                 {taskPriorityOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -344,12 +512,12 @@ export default async function TasksPage({ searchParams }: PageProps) {
             </label>
 
             <label>
-              <span className="mb-2 block text-sm font-medium text-slate-700">Status</span>
+              <span className={labelClass}>Status</span>
               <select
                 name="status"
                 required
                 defaultValue={selectedTask?.status ?? TaskStatus.PENDING}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={selectClass}
               >
                 {taskStatusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -360,35 +528,31 @@ export default async function TasksPage({ searchParams }: PageProps) {
             </label>
 
             <label>
-              <span className="mb-2 block text-sm font-medium text-slate-700">Prazo</span>
+              <span className={labelClass}>Prazo</span>
               <input
                 type="datetime-local"
                 name="dueDate"
                 defaultValue={toDateTimeLocalValue(selectedTask?.dueDate)}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={inputClass}
               />
             </label>
 
             <label>
-              <span className="mb-2 block text-sm font-medium text-slate-700">
-                Responsavel
-              </span>
+              <span className={labelClass}>Responsavel</span>
               <input
                 type="text"
                 name="assigneeName"
                 defaultValue={selectedTask?.assigneeName ?? ""}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={inputClass}
               />
             </label>
 
             <label className="col-span-full">
-              <span className="mb-2 block text-sm font-medium text-slate-700">
-                Produto vinculado
-              </span>
+              <span className={labelClass}>Produto vinculado</span>
               <select
                 name="relatedProductId"
                 defaultValue={selectedTask?.relatedProductId ?? ""}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={selectClass}
               >
                 <option value="">Sem vinculo</option>
                 {products.map((product) => (
@@ -402,7 +566,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
             <div className="col-span-full flex flex-wrap gap-3">
               <button
                 type="submit"
-                className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+                className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(23,107,99,0.18)] hover:bg-[var(--primary-dim)]"
               >
                 {selectedTask ? "Salvar alteracoes" : "Criar tarefa"}
               </button>
@@ -415,14 +579,14 @@ export default async function TasksPage({ searchParams }: PageProps) {
                       success: undefined,
                       error: undefined,
                     })}
-                    className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                    className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
                   >
                     Nova tarefa
                   </Link>
                   <button
                     type="submit"
                     formAction={removeTask}
-                    className="rounded-lg border border-rose-200 px-4 py-3 text-sm font-medium text-rose-700"
+                    className="rounded-lg border border-[var(--error-container)] bg-white px-4 py-3 text-sm font-medium text-rose-700 hover:border-[var(--error)]"
                   >
                     Excluir tarefa
                   </button>
