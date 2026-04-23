@@ -81,8 +81,8 @@ export function AppPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-[var(--outline-variant)] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <section className="rounded-lg border border-[var(--outline-variant)] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--surface-container-high)] px-5 py-4 sm:px-6">
         <div>
           {eyebrow ? (
             <p className="mb-1 text-xs font-semibold text-[var(--on-surface-variant)]">
@@ -93,7 +93,7 @@ export function AppPanel({
         </div>
         {action ? <div>{action}</div> : null}
       </div>
-      {children}
+      <div className="px-5 py-5 sm:px-6 sm:py-6">{children}</div>
     </section>
   );
 }
@@ -113,11 +113,11 @@ export function MetricCard({
 
   return (
     <div
-      className={`flex min-h-[152px] flex-col justify-between rounded-lg border border-l-4 border-[var(--outline-variant)] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${theme.accent}`}
+      className={`flex min-h-[158px] flex-col justify-between rounded-lg border border-l-4 border-[var(--outline-variant)] bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)] ${theme.accent}`}
     >
       <div>
         <div
-          className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${theme.iconWrap}`}
+          className={`mb-4 flex h-11 w-11 items-center justify-center rounded-lg ${theme.iconWrap}`}
         >
           <span className="material-symbols-outlined text-[20px]">{theme.icon}</span>
         </div>
@@ -127,7 +127,7 @@ export function MetricCard({
         <p className="font-headline text-3xl font-extrabold tracking-tight text-slate-950">
           {value}
         </p>
-        <p className="mt-2 text-sm text-[var(--on-surface-variant)]">{note}</p>
+        <p className="mt-2 text-sm leading-6 text-[var(--on-surface-variant)]">{note}</p>
       </div>
     </div>
   );
@@ -136,7 +136,7 @@ export function MetricCard({
 export function StatusPill({ label }: { label: string }) {
   return (
     <span
-      className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)] ${
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)] ${
         statusMap[label] ?? "bg-slate-100 text-slate-900"
       }`}
     >
@@ -346,12 +346,12 @@ export function AlertCard({
               : category;
 
   return (
-    <div className={`rounded-lg border border-l-4 border-[var(--outline-variant)] bg-white p-4 ${toneClass}`}>
+    <div className={`rounded-lg border border-l-4 border-[var(--outline-variant)] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] ${toneClass}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-[var(--surface-container-low)] px-2.5 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
+        <span className="rounded-full bg-[var(--surface-container-low)] px-2.5 py-1 text-xs font-semibold text-[var(--on-secondary-container)]">
           {categoryLabel}
         </span>
-        <span className="rounded-md bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white">
+        <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white">
           Prioridade {severityLabel}
         </span>
       </div>
@@ -360,9 +360,10 @@ export function AlertCard({
       <div className="mt-4">
         <Link
           href={href}
-          className="text-sm font-semibold text-[var(--primary)] transition hover:text-[var(--primary-dim)]"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--primary)] transition hover:text-[var(--primary-dim)]"
         >
           {actionLabel}
+          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
         </Link>
       </div>
     </div>

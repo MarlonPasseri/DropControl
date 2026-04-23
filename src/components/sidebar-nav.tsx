@@ -21,7 +21,11 @@ export function SidebarNav({ items }: { items: NavigationItem[] }) {
   const pathname = usePathname();
 
   return (
-    <nav className="mt-6 flex-1 space-y-1 px-3">
+    <nav className="mt-6 flex-1 px-3">
+      <div className="mb-3 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+        Navegacao
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-2 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -29,12 +33,13 @@ export function SidebarNav({ items }: { items: NavigationItem[] }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+            className={`relative flex min-w-max items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-all duration-200 lg:min-w-0 ${
               active
-                ? "bg-[var(--surface-container-low)] text-slate-950 shadow-[inset_3px_0_0_var(--primary)]"
-                : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-slate-900"
+                ? "border-[var(--primary)] bg-[var(--surface-container-low)] text-slate-950 shadow-[inset_3px_0_0_var(--primary)]"
+                : "border-transparent text-[var(--on-surface-variant)] hover:border-[var(--outline-variant)] hover:bg-[var(--surface-container-low)] hover:text-slate-900"
             }`}
           >
+            <span className={`h-2.5 w-2.5 rounded-full ${item.accent}`} />
             <span className="material-symbols-outlined text-[20px]">
               {iconMap[item.href] ?? "dashboard"}
             </span>
@@ -42,6 +47,7 @@ export function SidebarNav({ items }: { items: NavigationItem[] }) {
           </Link>
         );
       })}
+      </div>
     </nav>
   );
 }

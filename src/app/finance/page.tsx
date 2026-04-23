@@ -93,6 +93,11 @@ function parseDateInput(value: string | undefined, endOfDay = false) {
   return date;
 }
 
+const inputClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 placeholder:text-[var(--outline)] focus:border-[var(--primary)]";
+const selectClass =
+  "w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] px-4 py-3 text-sm text-slate-900 outline-none ring-0 focus:border-[var(--primary)]";
+
 export default async function FinancePage({ searchParams }: PageProps) {
   const user = await requireUser();
   const params = (await searchParams) ?? {};
@@ -156,6 +161,119 @@ export default async function FinancePage({ searchParams }: PageProps) {
       title="Financeiro"
       description="Lancamentos reais, margem por pedido e leitura mensal de lucro para fechar o loop operacional."
     >
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <AppPanel title="Radar financeiro" eyebrow="Leitura executiva">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                  Fechamento do periodo
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {typeFilter
+                    ? `Voce esta olhando somente ${getFinancialEntryTypeLabel(typeFilter).toLowerCase()}.`
+                    : "Use este modulo para refinar o lucro real com taxas, anuncios, despesas extras e reembolsos."}
+                  {query ? ` Busca ativa: "${query}".` : ""}
+                  {fromParam || toParam
+                    ? ` Janela filtrada de ${fromParam || "inicio"} ate ${toParam || "hoje"}.`
+                    : ""}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={buildQueryString(params, {
+                    type: FinancialEntryType.EXPENSE,
+                    edit: undefined,
+                    page: undefined,
+                    success: undefined,
+                    error: undefined,
+                  })}
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Ver despesas
+                </Link>
+                <Link
+                  href={buildQueryString(params, {
+                    type: FinancialEntryType.REFUND,
+                    edit: undefined,
+                    page: undefined,
+                    success: undefined,
+                    error: undefined,
+                  })}
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Ver reembolsos
+                </Link>
+                <Link
+                  href="/invoices"
+                  className="rounded-full border border-[var(--outline-variant)] bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                >
+                  Abrir fiscal
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Em aberto</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{invoiceSnapshot.openCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Notas que ainda impactam caixa</p>
+              </div>
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Valor aberto</p>
+                <p className="mt-2 text-lg font-bold text-slate-950">
+                  {formatCurrency(invoiceSnapshot.totalOpenAmount)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">Compromissos fiscais pendentes</p>
+              </div>
+              <div className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Formulario</p>
+                <p className="mt-2 text-sm font-bold text-slate-950">
+                  {selectedEntry ? "Edicao em andamento" : "Novo lancamento"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {selectedEntry ? "Ajuste a categoria e o impacto no lucro" : "Pronto para registrar ajuste manual"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </AppPanel>
+
+        <AppPanel title="Atalhos financeiros" eyebrow="Acoes recorrentes">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              href={buildQueryString(params, {
+                edit: undefined,
+                success: undefined,
+                error: undefined,
+              })}
+              className="rounded-lg bg-[var(--primary)] px-4 py-4 text-sm font-semibold text-[var(--on-primary)] shadow-[0_16px_36px_rgba(23,107,99,0.22)] hover:bg-[var(--primary-dim)]"
+            >
+              Novo lancamento
+            </Link>
+            <Link
+              href="/orders"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Rever pedidos
+            </Link>
+            <Link
+              href="/invoices"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Ir para notas fiscais
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-4 text-sm font-semibold text-slate-800 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Voltar ao dashboard
+            </Link>
+          </div>
+        </AppPanel>
+      </section>
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {financeMetrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} />
@@ -176,12 +294,12 @@ export default async function FinancePage({ searchParams }: PageProps) {
               name="q"
               defaultValue={query}
               placeholder="Buscar por descricao, pedido, cliente, produto ou fornecedor"
-              className="min-w-0 rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={inputClass}
             />
             <select
               name="type"
               defaultValue={typeFilter ?? ""}
-              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={selectClass}
             >
               <option value="">Todos os tipos</option>
               {financialEntryTypeOptions.map((option) => (
@@ -194,29 +312,49 @@ export default async function FinancePage({ searchParams }: PageProps) {
               type="date"
               name="from"
               defaultValue={fromParam ?? ""}
-              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={inputClass}
             />
             <input
               type="date"
               name="to"
               defaultValue={toParam ?? ""}
-              className="rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              className={inputClass}
             />
             <button
               type="submit"
-              className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+              className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(23,107,99,0.18)] hover:bg-[var(--primary-dim)]"
             >
               Filtrar
             </button>
             {(query || typeFilter || fromParam || toParam || editId) && (
               <Link
                 href="/finance"
-                className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
               >
                 Limpar
               </Link>
             )}
           </form>
+
+          {(query || typeFilter || fromParam || toParam) && (
+            <div className="flex flex-wrap gap-2">
+              {query ? (
+                <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                  Busca: {query}
+                </span>
+              ) : null}
+              {typeFilter ? (
+                <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                  Tipo: {getFinancialEntryTypeLabel(typeFilter)}
+                </span>
+              ) : null}
+              {fromParam || toParam ? (
+                <span className="rounded-full bg-[var(--surface-container-low)] px-3 py-2 text-xs font-semibold text-slate-700">
+                  Periodo: {fromParam || "inicio"} ate {toParam || "hoje"}
+                </span>
+              ) : null}
+            </div>
+          )}
 
           <div className="rounded-lg bg-[var(--surface-container-low)] px-4 py-3 text-sm text-[var(--on-surface-variant)]">
             Cada pedido continua com receita e custo base no modulo de pedidos. Os
@@ -253,59 +391,59 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 endIndex={paginatedEntries.endIndex}
                 totalItems={paginatedEntries.totalItems}
               />
-              <div className="overflow-x-auto rounded-lg border border-slate-200">
-              <table className="min-w-[860px] divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Data</th>
-                    <th className="px-4 py-3 font-medium">Tipo</th>
-                    <th className="px-4 py-3 font-medium">Pedido</th>
-                    <th className="px-4 py-3 font-medium">Valor</th>
-                    <th className="px-4 py-3 font-medium">Descricao</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {paginatedEntries.items.map((entry) => (
-                    <tr key={entry.id}>
-                      <td className="px-4 py-4 align-top text-slate-600">
-                        <p>{formatDateTime(entry.referenceDate)}</p>
-                        <p className="mt-1 text-xs text-slate-400">
-                          {getFinancialCategoryLabel(entry.category)}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 align-top">
-                        <StatusPill label={getFinancialEntryTypeLabel(entry.type)} />
-                      </td>
-                      <td className="px-4 py-4 align-top">
-                        <Link
-                          href={buildQueryString(params, {
-                            edit: entry.id,
-                            success: undefined,
-                            error: undefined,
-                          })}
-                          className="block rounded-lg transition hover:bg-slate-50"
-                        >
-                          <p className="font-medium text-slate-950">
-                            {entry.order?.orderNumber ?? "Sem pedido vinculado"}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-400">
-                            {entry.order
-                              ? `${entry.order.product.name} - ${entry.order.supplier.name}`
-                              : "Lancamento geral da operacao"}
-                          </p>
-                        </Link>
-                      </td>
-                      <td className="px-4 py-4 align-top font-medium text-slate-950">
-                        {formatCurrency(entry.amount)}
-                      </td>
-                      <td className="px-4 py-4 align-top text-slate-600">
-                        {entry.description || "Sem descricao"}
-                      </td>
+              <div className="overflow-x-auto rounded-lg border border-[var(--outline-variant)]">
+                <table className="min-w-[860px] divide-y divide-slate-200 text-sm">
+                  <thead className="bg-[var(--surface-container-low)] text-left text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Data</th>
+                      <th className="px-4 py-3 font-medium">Tipo</th>
+                      <th className="px-4 py-3 font-medium">Pedido</th>
+                      <th className="px-4 py-3 font-medium">Valor</th>
+                      <th className="px-4 py-3 font-medium">Descricao</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {paginatedEntries.items.map((entry) => (
+                      <tr key={entry.id} className="odd:bg-white even:bg-slate-50/55">
+                        <td className="px-4 py-4 align-top text-slate-600">
+                          <p>{formatDateTime(entry.referenceDate)}</p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {getFinancialCategoryLabel(entry.category)}
+                          </p>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <StatusPill label={getFinancialEntryTypeLabel(entry.type)} />
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <Link
+                            href={buildQueryString(params, {
+                              edit: entry.id,
+                              success: undefined,
+                              error: undefined,
+                            })}
+                            className="block rounded-lg transition hover:text-[var(--primary)]"
+                          >
+                            <p className="font-medium text-slate-950">
+                              {entry.order?.orderNumber ?? "Sem pedido vinculado"}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-400">
+                              {entry.order
+                                ? `${entry.order.product.name} - ${entry.order.supplier.name}`
+                                : "Lancamento geral da operacao"}
+                            </p>
+                          </Link>
+                        </td>
+                        <td className="px-4 py-4 align-top font-medium text-slate-950">
+                          {formatCurrency(entry.amount)}
+                        </td>
+                        <td className="px-4 py-4 align-top text-slate-600">
+                          {entry.description || "Sem descricao"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <PaginationControls
                 page={paginatedEntries.page}
                 totalPages={paginatedEntries.totalPages}
@@ -328,13 +466,27 @@ export default async function FinancePage({ searchParams }: PageProps) {
           <form action={saveFinancialEntry} className="grid gap-4">
             {selectedEntry ? <input type="hidden" name="id" value={selectedEntry.id} /> : null}
 
+            <div className="rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-4 text-sm text-slate-700">
+              {selectedEntry ? (
+                <p>
+                  Ajustando um lancamento existente. Revise categoria, vinculo e valor para manter
+                  o lucro consolidado consistente.
+                </p>
+              ) : (
+                <p>
+                  Registre aqui tudo que complementa a margem real: taxas, anuncios, despesas
+                  extras, receitas adicionais e reembolsos.
+                </p>
+              )}
+            </div>
+
             <label>
               <span className="mb-2 block text-sm font-medium text-slate-700">Tipo</span>
               <select
                 name="type"
                 required
                 defaultValue={selectedEntry?.type ?? FinancialEntryType.EXPENSE}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={selectClass}
               >
                 {financialEntryTypeOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -350,7 +502,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 name="category"
                 required
                 defaultValue={selectedEntry?.category ?? financialCategoryOptions[0]?.value}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={selectClass}
               >
                 {financialCategoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -367,7 +519,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
               <select
                 name="orderId"
                 defaultValue={selectedEntry?.orderId ?? ""}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={selectClass}
               >
                 <option value="">Sem pedido vinculado</option>
                 {orderOptions.map((order) => (
@@ -387,7 +539,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 step="0.01"
                 required
                 defaultValue={selectedEntry?.amount.toString() ?? ""}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={inputClass}
               />
             </label>
 
@@ -402,7 +554,7 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 defaultValue={toDateTimeLocalValue(
                   selectedEntry?.referenceDate ?? defaultReferenceDate,
                 )}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={inputClass}
               />
             </label>
 
@@ -412,14 +564,14 @@ export default async function FinancePage({ searchParams }: PageProps) {
                 name="description"
                 rows={4}
                 defaultValue={selectedEntry?.description ?? ""}
-                className="w-full rounded-lg border-none bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+                className={inputClass}
               />
             </label>
 
             <div className="flex flex-wrap gap-3">
               <button
                 type="submit"
-                className="signature-gradient rounded-lg px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(86,94,116,0.18)]"
+                className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] shadow-[0_12px_30px_rgba(23,107,99,0.18)] hover:bg-[var(--primary-dim)]"
               >
                 {selectedEntry ? "Salvar alteracoes" : "Criar lancamento"}
               </button>
@@ -432,14 +584,14 @@ export default async function FinancePage({ searchParams }: PageProps) {
                       success: undefined,
                       error: undefined,
                     })}
-                    className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+                    className="rounded-lg border border-[var(--outline-variant)] px-4 py-3 text-sm font-medium text-slate-700 hover:border-[var(--primary)] hover:text-[var(--primary)]"
                   >
                     Novo lancamento
                   </Link>
                   <button
                     type="submit"
                     formAction={removeFinancialEntry}
-                    className="rounded-lg border border-rose-200 px-4 py-3 text-sm font-medium text-rose-700"
+                    className="rounded-lg border border-[var(--error-container)] px-4 py-3 text-sm font-medium text-rose-700 hover:border-[var(--error)]"
                   >
                     Excluir lancamento
                   </button>
