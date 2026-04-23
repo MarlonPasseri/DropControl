@@ -1,6 +1,6 @@
 # Deploy no Cloud Run
 
-Este e o primeiro caminho recomendado para tirar o app do ambiente local. O banco ja esta no Cloud SQL; o proximo passo e rodar o Next.js como container no Cloud Run.
+Este e o caminho recomendado para tirar o app do ambiente local. O Cloud Run roda o Next.js, o Cloud SQL guarda os dados, o Secret Manager guarda credenciais, o Cloud Storage guarda uploads persistentes e um Cloud Run Job executa migrations.
 
 ## Pre-requisitos
 
@@ -17,7 +17,9 @@ Neste PC, o `gcloud` ainda nao esta instalado. Sem ele, o deploy real precisa se
 - Cloud Run roda o container Next.js.
 - Cloud SQL fica como banco gerenciado.
 - Secret Manager guarda credenciais.
-- Artifact Registry guarda a imagem Docker.
+- Artifact Registry guarda duas imagens Docker: app e migrator.
+- Cloud Run Job `dropship-control-migrate` roda `prisma migrate deploy`.
+- Cloud Storage guarda fotos de perfil quando `PROFILE_IMAGE_BUCKET` esta configurado.
 - Cloud Run se conecta ao Cloud SQL pela integracao gerenciada de Cloud SQL, usando socket Unix em `/cloudsql/INSTANCE_CONNECTION_NAME`.
 
 O app aceita dois modos de conexao:
@@ -81,6 +83,7 @@ Depois de instalar/autenticar o `gcloud`, rode:
   -ProfileImageBucket "NOME_DO_BUCKET_DE_FOTOS" `
   -AppUrl "https://URL_DO_CLOUD_RUN_OU_DOMINIO" `
   -EnableGoogleOAuth `
+  -EnableTikTokShop `
   -AllowUnauthenticated
 ```
 
@@ -88,50 +91,66 @@ O script:
 
 - habilita APIs necessarias;
 - cria o Artifact Registry se ainda nao existir;
-- envia o build para o Cloud Build;
+- cria/publica duas imagens pelo Cloud Build, uma para o app e outra para migrations;
+- cria ou atualiza o bucket de fotos quando `-ProfileImageBucket` e informado;
+- concede `roles/storage.objectUser` para a service account do Cloud Run no bucket;
+- cria ou atualiza o Cloud Run Job de migrations;
+- executa o job de migrations e espera terminar;
 - faz deploy no Cloud Run;
 - conecta o Cloud Run ao Cloud SQL;
 - injeta secrets do Secret Manager.
+
+Se precisar publicar sem rodar migrations, adicione:
+
+```powershell
+-SkipMigrations
+```
+
+Se o build remoto ja terminou e voce so precisa refazer job/deploy com a mesma imagem, adicione:
+
+```powershell
+-SkipBuild
+```
+
+Se usar uma service account dedicada para o runtime, passe:
+
+```powershell
+-ServiceAccount "NOME@PROJECT_ID.iam.gserviceaccount.com"
+```
+
+Nesse caso, o script tambem concede permissao de escrita/leitura no bucket para essa service account.
+
+Use `-EnableTikTokShop` somente depois que estes secrets tiverem versao `latest`:
+
+```txt
+tiktok-shop-app-key
+tiktok-shop-app-secret
+tiktok-shop-token-secret
+tiktok-shop-webhook-secret
+```
 
 ## Uploads de perfil
 
 Em Cloud Run, arquivos gravados no container nao sao persistentes. Por isso, fotos de perfil devem usar Cloud Storage.
 
-Crie um bucket privado e permita que a service account do Cloud Run leia/escreva objetos:
-
-```bash
-gcloud storage buckets create gs://NOME_DO_BUCKET_DE_FOTOS \
-  --project=PROJECT_ID \
-  --location=us-central1 \
-  --uniform-bucket-level-access \
-  --public-access-prevention
-
-gcloud storage buckets add-iam-policy-binding gs://NOME_DO_BUCKET_DE_FOTOS \
-  --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
-  --role="roles/storage.objectUser"
-```
-
-Depois configure no Cloud Run:
-
-```bash
-gcloud run services update dropship-control \
-  --project=PROJECT_ID \
-  --region=us-central1 \
-  --update-env-vars=PROFILE_IMAGE_BUCKET=NOME_DO_BUCKET_DE_FOTOS
-```
+O deploy cria o bucket se ele ainda nao existir quando `-ProfileImageBucket` e informado, aplica `uniform-bucket-level-access`, bloqueia acesso publico e configura `PROFILE_IMAGE_BUCKET` no servico e no job.
 
 O bucket fica privado. O app entrega as imagens pela rota autenticada `/api/profile-image/...`.
 
 ## Migrations
 
-Por enquanto, rode migrations localmente contra o Cloud SQL:
+O deploy cria ou atualiza um Cloud Run Job chamado `dropship-control-migrate` usando a imagem `dropship-control-migrator`. O job usa os mesmos secrets, env vars e conexao Cloud SQL do servico principal.
+
+Para rodar migrations manualmente sem usar o PC local:
 
 ```bash
-npm run db:check
-npm run db:migrate:deploy
+gcloud run jobs execute dropship-control-migrate \
+  --project=PROJECT_ID \
+  --region=us-central1 \
+  --wait
 ```
 
-O proximo incremento e criar um Cloud Run Job dedicado para migrations, usando o mesmo container e secrets.
+Use `npm run db:migrate:deploy` localmente apenas para desenvolvimento ou diagnostico controlado.
 
 ## OAuth e dominio
 
@@ -172,8 +191,6 @@ Esse comando grava `auth-google-id` e `auth-google-secret` no Secret Manager e a
 
 ## Pendencias antes de cliente real
 
-- Mover uploads de perfil para Cloud Storage.
-- Criar Cloud Run Job para migrations.
 - Configurar dominio proprio e HTTPS gerenciado.
 - Configurar alertas de erro e latencia.
 - Revisar Cloud SQL para usar IP privado ou conexao gerenciada sem expor rede publica.

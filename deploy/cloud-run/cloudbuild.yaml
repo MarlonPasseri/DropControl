@@ -1,0 +1,26 @@
+substitutions:
+  _APP_IMAGE: app-image
+  _MIGRATOR_IMAGE: migrator-image
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --target
+      - runner
+      - -t
+      - ${_APP_IMAGE}
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --target
+      - migrator
+      - -t
+      - ${_MIGRATOR_IMAGE}
+      - .
+
+images:
+  - ${_APP_IMAGE}
+  - ${_MIGRATOR_IMAGE}
