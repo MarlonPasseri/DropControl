@@ -49,6 +49,7 @@ As demais variables sao opcionais porque o workflow ja tem os valores atuais com
 GCP_PROJECT_ID=dropcontrol-494022
 GCP_REGION=us-central1
 CLOUD_RUN_SERVICE=dropship-control
+CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=490152629905-compute@developer.gserviceaccount.com
 CLOUD_SQL_INSTANCE=project-a7ab51c3-7d7a-4f8b-a6b:us-central1:drop-controler-db
 PROFILE_IMAGE_BUCKET=dropcontrol-494022-profile-images
 APP_URL=https://dropship-control-rwquuxvh6a-uc.a.run.app

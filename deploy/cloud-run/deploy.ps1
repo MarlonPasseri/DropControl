@@ -150,6 +150,7 @@ if (Get-Command $GcloudCommand -ErrorAction SilentlyContinue) {
 Invoke-Gcloud config set project $ProjectId | Out-Host
 
 Invoke-Gcloud services enable `
+  cloudresourcemanager.googleapis.com `
   run.googleapis.com `
   artifactregistry.googleapis.com `
   cloudbuild.googleapis.com `
