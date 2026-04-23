@@ -18,6 +18,7 @@ export function LoginForm({
   const searchParams = useSearchParams();
   const rawCallbackUrl = searchParams.get("callbackUrl");
   const authError = searchParams.get("error");
+  const resetStatus = searchParams.get("reset");
   let callbackUrl = "/dashboard";
 
   if (rawCallbackUrl) {
@@ -60,6 +61,12 @@ export function LoginForm({
       {oauthErrorMessage ? (
         <p className="rounded-lg bg-[color:rgba(254,137,131,0.18)] px-4 py-3 text-sm text-[var(--error)]">
           {oauthErrorMessage}
+        </p>
+      ) : null}
+
+      {resetStatus === "success" ? (
+        <p className="rounded-lg bg-[color:rgba(213,227,252,0.45)] px-4 py-3 text-sm text-[var(--on-secondary-container)]">
+          Senha redefinida com sucesso. Entre com a nova senha para continuar.
         </p>
       ) : null}
 
@@ -138,6 +145,15 @@ export function LoginForm({
 
         <p className="text-sm text-[var(--on-surface-variant)]">
           Depois de algumas tentativas sem sucesso, o acesso entra em pausa por alguns minutos.
+        </p>
+
+        <p className="text-sm">
+          <a
+            href="/login/reset-password"
+            className="font-semibold text-[var(--primary)] transition hover:text-[var(--primary-dim)]"
+          >
+            Esqueci minha senha
+          </a>
         </p>
       </form>
     </div>

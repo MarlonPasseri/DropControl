@@ -56,12 +56,23 @@ Esta aplicacao agora tem uma base melhor de seguranca de rede e borda, mas dados
   - contas `ADMIN` podem ativar TOTP direto em `/security`;
   - depois do login, administradores com MFA ativa passam por `/login/mfa`;
   - a validacao do segundo fator e exigida antes de abrir o painel;
-  - a chave MFA fica armazenada criptografada no banco.
+  - a chave MFA fica armazenada criptografada no banco;
+  - recovery codes podem ser gerados e regenerados em `/security`;
+  - recovery codes tambem servem para concluir o desafio de MFA se o autenticador falhar.
+- Reset de senha seguro:
+  - fluxo por token com expiracao;
+  - e-mail de redefinicao via SMTP;
+  - armazenamento apenas do hash do token no banco.
+- Rate limit ampliado:
+  - login por credenciais;
+  - POST em `/api/auth/*`;
+  - pedido e consumo de reset de senha;
+  - desafio de MFA.
 
 ## Proximo incremento recomendado no codigo
 
-1. Adicionar codigos de recuperacao e fluxo de reset de MFA.
-2. Adicionar testes automatizados para autorizacao e isolamento por usuario.
-3. Adicionar revisao e revogacao de sessoes ativas.
-4. Separar permissoes finas por modulo quando houver mais de um perfil operacional.
-5. Integrar alertas automaticos com resposta operacional para eventos `WARN`, `ERROR` e `CRITICAL`.
+1. Adicionar testes automatizados para autorizacao, rate limit e isolamento por usuario.
+2. Adicionar revisao e revogacao de sessoes ativas.
+3. Separar permissoes finas por modulo quando houver mais de um perfil operacional.
+4. Integrar alertas automaticos com resposta operacional para eventos `WARN`, `ERROR` e `CRITICAL`.
+5. Acoplar reset de senha a um provedor transacional dedicado quando sair do SMTP basico.

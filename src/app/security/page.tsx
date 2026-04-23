@@ -3,7 +3,9 @@ import {
   beginMfaSetup,
   cancelMfaSetup,
   confirmMfaSetup,
+  dismissRecoveryCodes,
   disableMfa,
+  regenerateMfaRecoveryCodes,
   updateUserAccess,
 } from "@/app/security/actions";
 import { AppShell } from "@/components/app-shell";
@@ -17,9 +19,12 @@ import { getSecurityOverview } from "@/lib/data/security";
 import { formatDateTime } from "@/lib/formatters";
 import { requireAdminUser } from "@/lib/require-user";
 import {
+  getMfaRecoveryCodesCookieName,
   getMfaSetupCookieName,
+  getRecoveryCodeCount,
   getOtpAuthUri,
   readPendingMfaSetupValue,
+  readRecoveryCodesDisplayValue,
 } from "@/lib/security/mfa";
 import { APP_ROLES, getRoleLabel } from "@/lib/security/roles";
 
@@ -82,6 +87,10 @@ export default async function SecurityPage({ searchParams }: PageProps) {
     cookieStore.get(getMfaSetupCookieName())?.value,
     user.id,
   );
+  const recoveryCodesPreview = readRecoveryCodesDisplayValue(
+    cookieStore.get(getMfaRecoveryCodesCookieName())?.value,
+    user.id,
+  );
   const otpAuthUri =
     pendingMfaSetup && user.email
       ? getOtpAuthUri({
@@ -89,6 +98,7 @@ export default async function SecurityPage({ searchParams }: PageProps) {
           secret: pendingMfaSetup.secret,
         })
       : null;
+  const recoveryCodeCount = getRecoveryCodeCount(securityUser?.mfaRecoveryCodes);
 
   return (
     <AppShell
@@ -156,14 +166,59 @@ export default async function SecurityPage({ searchParams }: PageProps) {
               <div className="text-sm leading-6 text-[var(--on-surface-variant)]">
                 Contas administrativas passam a pedir um codigo do autenticador depois do login.
               </div>
+
+              <div>
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">
+                  Recovery codes restantes
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {securityUser?.mfaEnabled
+                    ? `${recoveryCodeCount} codigo(s) restantes`
+                    : "Disponiveis apos ativar MFA"}
+                </p>
+              </div>
             </div>
 
             <div className="space-y-4">
+              {recoveryCodesPreview ? (
+                <div className="space-y-4 rounded-lg border border-[var(--warning-container)] bg-[var(--warning-container)]/35 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">
+                      Guarde estes recovery codes agora
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--on-surface-variant)]">
+                      Eles aparecem apenas uma vez. Cada codigo pode ser usado uma unica vez para
+                      concluir o segundo fator se voce perder o autenticador.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {recoveryCodesPreview.codes.map((code) => (
+                      <div
+                        key={code}
+                        className="rounded-lg border border-[var(--outline-variant)] bg-white px-3 py-3 text-sm font-semibold tracking-[0.14em] text-slate-950"
+                      >
+                        {code}
+                      </div>
+                    ))}
+                  </div>
+
+                  <form action={dismissRecoveryCodes}>
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-slate-400"
+                    >
+                      Ja guardei estes codigos
+                    </button>
+                  </form>
+                </div>
+              ) : null}
+
               {securityUser?.mfaEnabled ? (
                 <div className="space-y-4 rounded-lg border border-[var(--outline-variant)] bg-white p-4">
                   <p className="text-sm leading-6 text-[var(--on-surface-variant)]">
-                    MFA ja esta ativa nesta conta. Para desativar, confirme um codigo valido do
-                    autenticador.
+                    MFA ja esta ativa nesta conta. Para desativar ou regenerar recovery codes,
+                    confirme um codigo valido do autenticador ou um recovery code ainda nao usado.
                   </p>
 
                   <form action={disableMfa} className="space-y-4">
@@ -175,10 +230,10 @@ export default async function SecurityPage({ searchParams }: PageProps) {
                         type="text"
                         name="code"
                         required
-                        inputMode="numeric"
+                        inputMode="text"
                         autoComplete="one-time-code"
-                        maxLength={12}
-                        placeholder="000000"
+                        maxLength={32}
+                        placeholder="000000 ou XXXXX-XXXXX"
                         className="w-full rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.2em] text-slate-900 outline-none transition focus:border-[var(--primary)]"
                       />
                     </label>
@@ -188,6 +243,44 @@ export default async function SecurityPage({ searchParams }: PageProps) {
                       className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-[var(--error)] hover:text-[var(--error)]"
                     >
                       Desativar MFA
+                    </button>
+                  </form>
+
+                  <form
+                    action={regenerateMfaRecoveryCodes}
+                    className="space-y-4 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">
+                        Regenerar recovery codes
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--on-surface-variant)]">
+                        O conjunto atual sera invalidado imediatamente. Use um codigo do autenticador
+                        ou um recovery code ainda valido para autorizar a troca.
+                      </p>
+                    </div>
+
+                    <label className="block">
+                      <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                        Codigo de confirmacao
+                      </span>
+                      <input
+                        type="text"
+                        name="code"
+                        required
+                        inputMode="text"
+                        autoComplete="one-time-code"
+                        maxLength={32}
+                        placeholder="000000 ou XXXXX-XXXXX"
+                        className="w-full rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.18em] text-slate-900 outline-none transition focus:border-[var(--primary)]"
+                      />
+                    </label>
+
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] transition hover:bg-[var(--primary-dim)]"
+                    >
+                      Gerar novo conjunto
                     </button>
                   </form>
                 </div>

@@ -111,7 +111,10 @@ model User {
   passwordHash     String?          @map("password_hash")
   mfaEnabled       Boolean          @default(false) @map("mfa_enabled")
   mfaSecretCiphertext String?       @map("mfa_secret_ciphertext") @db.Text
+  mfaRecoveryCodes Json?            @map("mfa_recovery_codes")
   mfaEnrolledAt    DateTime?        @map("mfa_enrolled_at")
+  passwordResetTokenHash String?    @map("password_reset_token_hash") @db.Text
+  passwordResetTokenExpiresAt DateTime? @map("password_reset_token_expires_at")
   suppliers        Supplier[]
   products         Product[]
   orders           Order[]

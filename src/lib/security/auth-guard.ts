@@ -1,11 +1,39 @@
 import { CredentialsSignin } from "@auth/core/errors";
 
-const SIGN_IN_WINDOW_MS = 10 * 60 * 1000;
-const SIGN_IN_BLOCK_MS = 10 * 60 * 1000;
-const SIGN_IN_MAX_ATTEMPTS = 5;
-const REGISTRATION_WINDOW_MS = 30 * 60 * 1000;
-const REGISTRATION_BLOCK_MS = 30 * 60 * 1000;
-const REGISTRATION_MAX_ATTEMPTS = 3;
+const RATE_LIMIT_POLICIES = {
+  apiAuth: {
+    windowMs: 5 * 60 * 1000,
+    blockMs: 5 * 60 * 1000,
+    maxAttempts: 30,
+  },
+  mfaChallenge: {
+    windowMs: 10 * 60 * 1000,
+    blockMs: 15 * 60 * 1000,
+    maxAttempts: 6,
+  },
+  passwordResetConsume: {
+    windowMs: 15 * 60 * 1000,
+    blockMs: 30 * 60 * 1000,
+    maxAttempts: 6,
+  },
+  passwordResetRequest: {
+    windowMs: 15 * 60 * 1000,
+    blockMs: 30 * 60 * 1000,
+    maxAttempts: 4,
+  },
+  registration: {
+    windowMs: 30 * 60 * 1000,
+    blockMs: 30 * 60 * 1000,
+    maxAttempts: 3,
+  },
+  signIn: {
+    windowMs: 10 * 60 * 1000,
+    blockMs: 10 * 60 * 1000,
+    maxAttempts: 5,
+  },
+} as const;
+
+type RateLimitScope = keyof typeof RATE_LIMIT_POLICIES;
 
 type AttemptBucket = {
   blockedUntil: number | null;
@@ -14,20 +42,27 @@ type AttemptBucket = {
 };
 
 type AttemptStore = {
-  registration: Map<string, AttemptBucket>;
-  signIn: Map<string, AttemptBucket>;
+  [Key in RateLimitScope]: Map<string, AttemptBucket>;
 };
 
 const globalAttemptStore = globalThis as typeof globalThis & {
   __authAttemptStore?: AttemptStore;
 };
 
+function buildAttemptStore(): AttemptStore {
+  return {
+    apiAuth: new Map(),
+    mfaChallenge: new Map(),
+    passwordResetConsume: new Map(),
+    passwordResetRequest: new Map(),
+    registration: new Map(),
+    signIn: new Map(),
+  };
+}
+
 function getAttemptStore() {
   if (!globalAttemptStore.__authAttemptStore) {
-    globalAttemptStore.__authAttemptStore = {
-      registration: new Map(),
-      signIn: new Map(),
-    };
+    globalAttemptStore.__authAttemptStore = buildAttemptStore();
   }
 
   return globalAttemptStore.__authAttemptStore;
@@ -77,15 +112,11 @@ function getBucketState(
   return currentBucket;
 }
 
-function recordFailure(
-  bucketMap: Map<string, AttemptBucket>,
-  key: string,
-  windowMs: number,
-  blockMs: number,
-  maxAttempts: number,
-) {
+function recordFailure(scope: RateLimitScope, key: string) {
+  const policy = RATE_LIMIT_POLICIES[scope];
+  const bucketMap = getAttemptStore()[scope];
   const now = Date.now();
-  const existingBucket = getBucketState(bucketMap, key, windowMs, now);
+  const existingBucket = getBucketState(bucketMap, key, policy.windowMs, now);
 
   if (!existingBucket) {
     bucketMap.set(key, {
@@ -98,29 +129,34 @@ function recordFailure(
 
   existingBucket.count += 1;
 
-  if (existingBucket.count >= maxAttempts) {
-    existingBucket.blockedUntil = now + blockMs;
+  if (existingBucket.count >= policy.maxAttempts) {
+    existingBucket.blockedUntil = now + policy.blockMs;
   }
 }
 
-function clearFailures(bucketMap: Map<string, AttemptBucket>, key: string) {
-  bucketMap.delete(key);
+function clearFailures(scope: RateLimitScope, key: string) {
+  getAttemptStore()[scope].delete(key);
 }
 
-function isBlocked(
-  bucketMap: Map<string, AttemptBucket>,
-  key: string,
-  windowMs: number,
-) {
-  const bucket = getBucketState(bucketMap, key, windowMs, Date.now());
+function isBlocked(scope: RateLimitScope, key: string) {
+  const policy = RATE_LIMIT_POLICIES[scope];
+  const bucket = getBucketState(getAttemptStore()[scope], key, policy.windowMs, Date.now());
   return Boolean(bucket?.blockedUntil);
 }
 
-function buildSignInKey(email: string, ipAddress: string) {
-  return `${normalizeToken(email)}|${normalizeToken(ipAddress)}`;
+function buildScopedKey(identifier: string, source: Headers | Request) {
+  return `${normalizeToken(identifier)}|${getClientIp(source)}`;
+}
+
+function buildIpScopedKey(source: Headers | Request) {
+  return getClientIp(source);
 }
 
 export class RateLimitedCredentialsError extends CredentialsSignin {
+  code = "temporarily_blocked";
+}
+
+export class RateLimitedActionError extends Error {
   code = "temporarily_blocked";
 }
 
@@ -129,43 +165,101 @@ export function getClientIp(source: Headers | Request) {
 }
 
 export function assertSignInAllowed(email: string, request: Request) {
-  const key = buildSignInKey(email, getClientIp(request));
-  const { signIn } = getAttemptStore();
-
-  if (isBlocked(signIn, key, SIGN_IN_WINDOW_MS)) {
+  if (isBlocked("signIn", buildScopedKey(email, request))) {
     throw new RateLimitedCredentialsError();
   }
 }
 
 export function recordSignInFailure(email: string, request: Request) {
-  const key = buildSignInKey(email, getClientIp(request));
-  recordFailure(
-    getAttemptStore().signIn,
-    key,
-    SIGN_IN_WINDOW_MS,
-    SIGN_IN_BLOCK_MS,
-    SIGN_IN_MAX_ATTEMPTS,
-  );
+  recordFailure("signIn", buildScopedKey(email, request));
 }
 
 export function clearSignInFailures(email: string, request: Request) {
-  clearFailures(getAttemptStore().signIn, buildSignInKey(email, getClientIp(request)));
+  clearFailures("signIn", buildScopedKey(email, request));
 }
 
 export function isRegistrationBlocked(ipAddress: string) {
-  return isBlocked(getAttemptStore().registration, normalizeToken(ipAddress), REGISTRATION_WINDOW_MS);
+  return isBlocked("registration", normalizeToken(ipAddress));
 }
 
 export function recordRegistrationFailure(ipAddress: string) {
-  recordFailure(
-    getAttemptStore().registration,
-    normalizeToken(ipAddress),
-    REGISTRATION_WINDOW_MS,
-    REGISTRATION_BLOCK_MS,
-    REGISTRATION_MAX_ATTEMPTS,
-  );
+  recordFailure("registration", normalizeToken(ipAddress));
 }
 
 export function clearRegistrationFailures(ipAddress: string) {
-  clearFailures(getAttemptStore().registration, normalizeToken(ipAddress));
+  clearFailures("registration", normalizeToken(ipAddress));
+}
+
+export function assertApiAuthAllowed(source: Headers | Request) {
+  if (isBlocked("apiAuth", buildIpScopedKey(source))) {
+    throw new RateLimitedActionError();
+  }
+}
+
+export function recordApiAuthFailure(source: Headers | Request) {
+  recordFailure("apiAuth", buildIpScopedKey(source));
+}
+
+export function clearApiAuthFailures(source: Headers | Request) {
+  clearFailures("apiAuth", buildIpScopedKey(source));
+}
+
+export function assertMfaChallengeAllowed(subject: string, source: Headers | Request) {
+  if (isBlocked("mfaChallenge", buildScopedKey(subject, source))) {
+    throw new RateLimitedActionError();
+  }
+}
+
+export function recordMfaChallengeFailure(subject: string, source: Headers | Request) {
+  recordFailure("mfaChallenge", buildScopedKey(subject, source));
+}
+
+export function clearMfaChallengeFailures(subject: string, source: Headers | Request) {
+  clearFailures("mfaChallenge", buildScopedKey(subject, source));
+}
+
+export function assertPasswordResetRequestAllowed(
+  email: string,
+  source: Headers | Request,
+) {
+  if (isBlocked("passwordResetRequest", buildScopedKey(email, source))) {
+    throw new RateLimitedActionError();
+  }
+}
+
+export function recordPasswordResetRequestFailure(
+  email: string,
+  source: Headers | Request,
+) {
+  recordFailure("passwordResetRequest", buildScopedKey(email, source));
+}
+
+export function clearPasswordResetRequestFailures(
+  email: string,
+  source: Headers | Request,
+) {
+  clearFailures("passwordResetRequest", buildScopedKey(email, source));
+}
+
+export function assertPasswordResetConsumeAllowed(
+  tokenKey: string,
+  source: Headers | Request,
+) {
+  if (isBlocked("passwordResetConsume", buildScopedKey(tokenKey, source))) {
+    throw new RateLimitedActionError();
+  }
+}
+
+export function recordPasswordResetConsumeFailure(
+  tokenKey: string,
+  source: Headers | Request,
+) {
+  recordFailure("passwordResetConsume", buildScopedKey(tokenKey, source));
+}
+
+export function clearPasswordResetConsumeFailures(
+  tokenKey: string,
+  source: Headers | Request,
+) {
+  clearFailures("passwordResetConsume", buildScopedKey(tokenKey, source));
 }

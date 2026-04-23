@@ -12,17 +12,30 @@ import {
   updateUserMfaSettings,
 } from "@/lib/data/users";
 import { requireAdminUser } from "@/lib/require-user";
+import { assertTrustedActionOrigin } from "@/lib/security/action-origin";
 import { recordAuditLog, recordSecurityEvent } from "@/lib/security/audit";
 import {
+  assertMfaChallengeAllowed,
+  clearMfaChallengeFailures,
+  recordMfaChallengeFailure,
+} from "@/lib/security/auth-guard";
+import {
   buildPendingMfaSetupValue,
+  buildRecoveryCodesDisplayValue,
   buildVerifiedMfaSessionValue,
+  consumeRecoveryCode,
   decryptMfaSecret,
   encryptMfaSecret,
+  generateRecoveryCodes,
   generateTotpSecret,
+  getMfaRecoveryCodesCookieName,
   getMfaSetupCookieName,
   getMfaVerificationCookieName,
   getMfaVerificationCookieOptions,
   getPendingMfaSetupCookieOptions,
+  getRecoveryCodeCount,
+  getRecoveryCodesCookieOptions,
+  hashRecoveryCodes,
   readPendingMfaSetupValue,
   verifyTotpCode,
 } from "@/lib/security/mfa";
@@ -73,8 +86,64 @@ async function requireAdminSessionWithoutMfa() {
   return session.user;
 }
 
+async function ensureTrustedSecurityAction() {
+  try {
+    return await assertTrustedActionOrigin();
+  } catch {
+    await recordSecurityEvent({
+      type: "SERVER_ACTION_ORIGIN_REJECTED",
+      severity: "WARN",
+      message: "Acao administrativa bloqueada por origem nao confiavel.",
+    });
+    securityRedirect({
+      error: "Solicitacao bloqueada por seguranca. Recarregue a pagina e tente novamente.",
+    });
+  }
+}
+
+function matchesMfaOrRecoveryCode(input: {
+  securityUser: Awaited<ReturnType<typeof getUserSecurityById>>;
+  code: string;
+}) {
+  const secret = decryptMfaSecret(input.securityUser?.mfaSecretCiphertext);
+
+  if (secret && verifyTotpCode({ secret, code: input.code })) {
+    return {
+      matched: true,
+      nextRecoveryCodes:
+        Array.isArray(input.securityUser?.mfaRecoveryCodes) &&
+        input.securityUser.mfaRecoveryCodes.every((value) => typeof value === "string")
+          ? (input.securityUser.mfaRecoveryCodes as string[])
+          : null,
+      usedRecoveryCode: false,
+    };
+  }
+
+  const recoveryResult = consumeRecoveryCode(input.securityUser?.mfaRecoveryCodes, input.code);
+
+  return {
+    matched: recoveryResult.matched,
+    nextRecoveryCodes: recoveryResult.nextCodes,
+    usedRecoveryCode: recoveryResult.matched,
+  };
+}
+
+async function storeRecoveryCodesForDisplay(userId: string, codes: string[]) {
+  const cookieStore = await cookies();
+  cookieStore.set(
+    getMfaRecoveryCodesCookieName(),
+    buildRecoveryCodesDisplayValue({
+      userId,
+      codes,
+      createdAt: Date.now(),
+    }),
+    getRecoveryCodesCookieOptions(),
+  );
+}
+
 export async function updateUserAccess(formData: FormData) {
   const actor = await requireAdminUser();
+  const { context } = await ensureTrustedSecurityAction();
   const parsed = updateUserAccessSchema.safeParse({
     userId: formData.get("userId"),
     role: formData.get("role"),
@@ -130,6 +199,7 @@ export async function updateUserAccess(formData: FormData) {
       previousRole: currentRole,
       newRole: parsed.data.role,
     },
+    context,
   });
   await recordSecurityEvent({
     userId: targetUser.id,
@@ -143,6 +213,7 @@ export async function updateUserAccess(formData: FormData) {
       previousRole: currentRole,
       newRole: parsed.data.role,
     },
+    context,
   });
 
   revalidatePath("/security");
@@ -155,6 +226,7 @@ export async function updateUserAccess(formData: FormData) {
 
 export async function beginMfaSetup() {
   const actor = await requireAdminUser();
+  await ensureTrustedSecurityAction();
   const secret = generateTotpSecret();
   const cookieStore = await cookies();
 
@@ -175,6 +247,7 @@ export async function beginMfaSetup() {
 
 export async function cancelMfaSetup() {
   await requireAdminUser();
+  await ensureTrustedSecurityAction();
   const cookieStore = await cookies();
   cookieStore.delete(getMfaSetupCookieName());
 
@@ -185,6 +258,7 @@ export async function cancelMfaSetup() {
 
 export async function confirmMfaSetup(formData: FormData) {
   const actor = await requireAdminUser();
+  const { context } = await ensureTrustedSecurityAction();
   const parsed = verifyMfaCodeSchema.safeParse({
     code: formData.get("code"),
   });
@@ -213,9 +287,12 @@ export async function confirmMfaSetup(formData: FormData) {
     });
   }
 
+  const recoveryCodes = generateRecoveryCodes();
+
   await updateUserMfaSettings(actor.id, {
     mfaEnabled: true,
     mfaSecretCiphertext: encryptMfaSecret(pendingSetup.secret),
+    mfaRecoveryCodes: hashRecoveryCodes(recoveryCodes),
     mfaEnrolledAt: new Date(),
   });
   await recordAuditLog({
@@ -224,6 +301,7 @@ export async function confirmMfaSetup(formData: FormData) {
     resource: "user_security",
     resourceId: actor.id,
     summary: "Autenticacao multifator ativada.",
+    context,
   });
   await recordSecurityEvent({
     userId: actor.id,
@@ -231,9 +309,11 @@ export async function confirmMfaSetup(formData: FormData) {
     type: "MFA_ENABLED",
     severity: "INFO",
     message: "Autenticacao multifator ativada para conta administrativa.",
+    context,
   });
 
   cookieStore.delete(getMfaSetupCookieName());
+  cookieStore.delete(getMfaRecoveryCodesCookieName());
   cookieStore.set(
     getMfaVerificationCookieName(),
     buildVerifiedMfaSessionValue({
@@ -242,16 +322,18 @@ export async function confirmMfaSetup(formData: FormData) {
     }),
     getMfaVerificationCookieOptions(),
   );
+  await storeRecoveryCodesForDisplay(actor.id, recoveryCodes);
 
   revalidatePath("/security");
   revalidatePath("/profile");
   securityRedirect({
-    success: "MFA ativado com sucesso para sua conta administrativa.",
+    success: "MFA ativado com sucesso. Guarde os recovery codes mostrados abaixo em local seguro.",
   });
 }
 
 export async function disableMfa(formData: FormData) {
   const actor = await requireAdminUser();
+  const { context } = await ensureTrustedSecurityAction();
   const parsed = verifyMfaCodeSchema.safeParse({
     code: formData.get("code"),
   });
@@ -270,17 +352,21 @@ export async function disableMfa(formData: FormData) {
     });
   }
 
-  const secret = decryptMfaSecret(securityUser.mfaSecretCiphertext);
+  const validation = matchesMfaOrRecoveryCode({
+    securityUser,
+    code: parsed.data.code,
+  });
 
-  if (!secret || !verifyTotpCode({ secret, code: parsed.data.code })) {
+  if (!validation.matched) {
     securityRedirect({
-      error: "Codigo MFA invalido. A desativacao nao foi realizada.",
+      error: "Codigo MFA ou recovery code invalido. A desativacao nao foi realizada.",
     });
   }
 
   await updateUserMfaSettings(actor.id, {
     mfaEnabled: false,
     mfaSecretCiphertext: null,
+    mfaRecoveryCodes: null,
     mfaEnrolledAt: null,
   });
   await recordAuditLog({
@@ -289,6 +375,7 @@ export async function disableMfa(formData: FormData) {
     resource: "user_security",
     resourceId: actor.id,
     summary: "Autenticacao multifator desativada.",
+    context,
   });
   await recordSecurityEvent({
     userId: actor.id,
@@ -296,10 +383,15 @@ export async function disableMfa(formData: FormData) {
     type: "MFA_DISABLED",
     severity: "WARN",
     message: "Autenticacao multifator desativada para conta administrativa.",
+    metadata: {
+      viaRecoveryCode: validation.usedRecoveryCode,
+    },
+    context,
   });
 
   const cookieStore = await cookies();
   cookieStore.delete(getMfaSetupCookieName());
+  cookieStore.delete(getMfaRecoveryCodesCookieName());
   cookieStore.delete(getMfaVerificationCookieName());
 
   revalidatePath("/security");
@@ -309,8 +401,115 @@ export async function disableMfa(formData: FormData) {
   });
 }
 
+export async function regenerateMfaRecoveryCodes(formData: FormData) {
+  const actor = await requireAdminUser();
+  const { context } = await ensureTrustedSecurityAction();
+  const parsed = verifyMfaCodeSchema.safeParse({
+    code: formData.get("code"),
+  });
+
+  if (!parsed.success) {
+    securityRedirect({
+      error:
+        parsed.error.issues[0]?.message ??
+        "Informe um codigo valido para regenerar os recovery codes.",
+    });
+  }
+
+  const securityUser = await getUserSecurityById(actor.id);
+
+  if (!securityUser?.mfaEnabled || !securityUser.mfaSecretCiphertext) {
+    securityRedirect({
+      error: "Ative MFA antes de gerar recovery codes.",
+    });
+  }
+
+  const validation = matchesMfaOrRecoveryCode({
+    securityUser,
+    code: parsed.data.code,
+  });
+
+  if (!validation.matched) {
+    securityRedirect({
+      error: "Codigo MFA ou recovery code invalido. Nenhum recovery code foi alterado.",
+    });
+  }
+
+  const recoveryCodes = generateRecoveryCodes();
+
+  await updateUserMfaSettings(actor.id, {
+    mfaEnabled: true,
+    mfaSecretCiphertext: securityUser.mfaSecretCiphertext,
+    mfaRecoveryCodes: hashRecoveryCodes(recoveryCodes),
+    mfaEnrolledAt: securityUser.mfaEnrolledAt ?? new Date(),
+  });
+  await recordAuditLog({
+    actor,
+    action: "REGENERATE_MFA_RECOVERY_CODES",
+    resource: "user_security",
+    resourceId: actor.id,
+    summary: "Recovery codes regenerados para MFA.",
+    metadata: {
+      viaRecoveryCode: validation.usedRecoveryCode,
+    },
+    context,
+  });
+  await recordSecurityEvent({
+    userId: actor.id,
+    email: actor.email ?? null,
+    type: "MFA_RECOVERY_CODES_REGENERATED",
+    severity: "WARN",
+    message: "Recovery codes da MFA foram regenerados.",
+    metadata: {
+      viaRecoveryCode: validation.usedRecoveryCode,
+    },
+    context,
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.delete(getMfaRecoveryCodesCookieName());
+  await storeRecoveryCodesForDisplay(actor.id, recoveryCodes);
+
+  revalidatePath("/security");
+  securityRedirect({
+    success: "Recovery codes atualizados. Guarde o novo conjunto mostrado abaixo.",
+  });
+}
+
+export async function dismissRecoveryCodes() {
+  await requireAdminUser();
+  await ensureTrustedSecurityAction();
+  const cookieStore = await cookies();
+  cookieStore.delete(getMfaRecoveryCodesCookieName());
+
+  securityRedirect({
+    success: "Painel de recovery codes ocultado.",
+  });
+}
+
 export async function verifyMfaChallenge(formData: FormData) {
   const actor = await requireAdminSessionWithoutMfa();
+  const { headers: requestHeaders, context } = await assertTrustedActionOrigin();
+  const challengeKey = actor.id;
+
+  try {
+    assertMfaChallengeAllowed(challengeKey, requestHeaders);
+  } catch {
+    await recordSecurityEvent({
+      userId: actor.id,
+      email: actor.email ?? null,
+      type: "MFA_CHALLENGE_RATE_LIMITED",
+      severity: "WARN",
+      message: "Segundo fator bloqueado temporariamente por excesso de tentativas.",
+      context,
+    });
+    redirect(
+      `/login/mfa?error=${encodeURIComponent(
+        "Muitas tentativas no segundo fator. Aguarde alguns minutos e tente novamente.",
+      )}&callbackUrl=${encodeURIComponent(resolveRedirectTarget(`${formData.get("callbackUrl") ?? ""}`))}`,
+    );
+  }
+
   const parsed = verifyMfaCodeSchema.safeParse({
     code: formData.get("code"),
     callbackUrl: formData.get("callbackUrl"),
@@ -333,20 +532,47 @@ export async function verifyMfaChallenge(formData: FormData) {
 
   const secret = decryptMfaSecret(securityUser.mfaSecretCiphertext);
   const redirectTarget = resolveRedirectTarget(parsed.data.callbackUrl);
+  const recoveryResult = consumeRecoveryCode(securityUser.mfaRecoveryCodes, parsed.data.code);
+  const totpMatched = Boolean(secret && verifyTotpCode({ secret, code: parsed.data.code }));
 
-  if (!secret || !verifyTotpCode({ secret, code: parsed.data.code })) {
+  if (!totpMatched && !recoveryResult.matched) {
+    recordMfaChallengeFailure(challengeKey, requestHeaders);
     await recordSecurityEvent({
       userId: actor.id,
       email: actor.email ?? null,
       type: "MFA_CHALLENGE_FAILED",
       severity: "WARN",
       message: "Falha ao validar segundo fator.",
+      context,
     });
     redirect(
       `/login/mfa?error=${encodeURIComponent(
-        "Codigo do autenticador invalido.",
+        "Codigo do autenticador ou recovery code invalido.",
       )}&callbackUrl=${encodeURIComponent(redirectTarget)}`,
     );
+  }
+
+  clearMfaChallengeFailures(challengeKey, requestHeaders);
+
+  if (recoveryResult.matched) {
+    await updateUserMfaSettings(actor.id, {
+      mfaEnabled: true,
+      mfaSecretCiphertext: securityUser.mfaSecretCiphertext,
+      mfaRecoveryCodes: recoveryResult.nextCodes,
+      mfaEnrolledAt: securityUser.mfaEnrolledAt,
+    });
+    await recordSecurityEvent({
+      userId: actor.id,
+      email: actor.email ?? null,
+      type: "MFA_RECOVERY_CODE_USED",
+      severity: "WARN",
+      message: "Recovery code usado para concluir o segundo fator.",
+      metadata: {
+        remainingRecoveryCodes: getRecoveryCodeCount(recoveryResult.nextCodes),
+      },
+      context,
+    });
+    revalidatePath("/security");
   }
 
   const cookieStore = await cookies();
@@ -361,9 +587,12 @@ export async function verifyMfaChallenge(formData: FormData) {
   await recordSecurityEvent({
     userId: actor.id,
     email: actor.email ?? null,
-    type: "MFA_CHALLENGE_SUCCESS",
-    severity: "INFO",
-    message: "Segundo fator validado com sucesso.",
+    type: recoveryResult.matched ? "MFA_CHALLENGE_SUCCESS_WITH_RECOVERY" : "MFA_CHALLENGE_SUCCESS",
+    severity: recoveryResult.matched ? "WARN" : "INFO",
+    message: recoveryResult.matched
+      ? "Segundo fator validado com recovery code."
+      : "Segundo fator validado com sucesso.",
+    context,
   });
 
   redirect(redirectTarget);
@@ -373,5 +602,6 @@ export async function abortMfaChallenge() {
   const cookieStore = await cookies();
   cookieStore.delete(getMfaVerificationCookieName());
   cookieStore.delete(getMfaSetupCookieName());
+  cookieStore.delete(getMfaRecoveryCodesCookieName());
   await signOut({ redirectTo: "/login" });
 }

@@ -1,5 +1,16 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveAppRole, type AppRole } from "@/lib/security/roles";
+
+function toJsonArray(
+  value: string[] | null | undefined,
+): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue {
+  if (!value) {
+    return Prisma.DbNull;
+  }
+
+  return value;
+}
 
 export async function getUserByEmail(email: string) {
   return prisma.user.findUnique({
@@ -33,7 +44,21 @@ export async function getUserSecurityById(id: string) {
       role: true,
       mfaEnabled: true,
       mfaSecretCiphertext: true,
+      mfaRecoveryCodes: true,
       mfaEnrolledAt: true,
+      passwordResetTokenHash: true,
+      passwordResetTokenExpiresAt: true,
+    },
+  });
+}
+
+export async function getUserByPasswordResetTokenHash(tokenHash: string) {
+  return prisma.user.findFirst({
+    where: {
+      passwordResetTokenHash: tokenHash,
+      passwordResetTokenExpiresAt: {
+        gt: new Date(),
+      },
     },
   });
 }
@@ -144,6 +169,7 @@ export async function updateUserMfaSettings(
   input: {
     mfaEnabled: boolean;
     mfaSecretCiphertext?: string | null;
+    mfaRecoveryCodes?: string[] | null;
     mfaEnrolledAt?: Date | null;
   },
 ) {
@@ -154,7 +180,56 @@ export async function updateUserMfaSettings(
     data: {
       mfaEnabled: input.mfaEnabled,
       mfaSecretCiphertext: input.mfaSecretCiphertext ?? null,
+      mfaRecoveryCodes: toJsonArray(input.mfaRecoveryCodes),
       mfaEnrolledAt: input.mfaEnrolledAt ?? null,
+    },
+  });
+}
+
+export async function setUserPasswordResetToken(
+  id: string,
+  input: {
+    tokenHash: string;
+    expiresAt: Date;
+  },
+) {
+  return prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      passwordResetTokenHash: input.tokenHash,
+      passwordResetTokenExpiresAt: input.expiresAt,
+    },
+  });
+}
+
+export async function clearUserPasswordResetToken(id: string) {
+  return prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      passwordResetTokenHash: null,
+      passwordResetTokenExpiresAt: null,
+    },
+  });
+}
+
+export async function updateUserPassword(
+  id: string,
+  input: {
+    passwordHash: string;
+  },
+) {
+  return prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      passwordHash: input.passwordHash,
+      passwordResetTokenHash: null,
+      passwordResetTokenExpiresAt: null,
     },
   });
 }

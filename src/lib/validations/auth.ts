@@ -32,6 +32,25 @@ export const registerSchema = z
     message: "As senhas precisam ser iguais.",
   });
 
+export const passwordResetRequestSchema = z.object({
+  email: emailField,
+});
+
+export const passwordResetCompleteSchema = z
+  .object({
+    token: z
+      .string()
+      .trim()
+      .min(20, "Link de redefinicao invalido.")
+      .max(256, "Link de redefinicao invalido."),
+    password: registerPasswordField,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "As senhas precisam ser iguais.",
+  });
+
 export const profileSchema = z.object({
   name: z
     .string()

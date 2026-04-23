@@ -75,7 +75,7 @@ export default async function MfaChallengePage({ searchParams }: PageProps) {
             Confirme seu acesso
           </h1>
           <p className="mt-3 text-sm leading-6 text-[var(--on-surface-variant)]">
-            Digite o codigo de 6 digitos do aplicativo autenticador para liberar o painel.
+            Digite o codigo de 6 digitos do aplicativo autenticador ou um recovery code ainda nao usado para liberar o painel.
           </p>
         </div>
 
@@ -90,10 +90,10 @@ export default async function MfaChallengePage({ searchParams }: PageProps) {
               type="text"
               name="code"
               required
-              inputMode="numeric"
+              inputMode="text"
               autoComplete="one-time-code"
-              maxLength={12}
-              placeholder="000000"
+              maxLength={32}
+              placeholder="000000 ou XXXXX-XXXXX"
               className="w-full rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.2em] text-slate-900 outline-none transition focus:border-[var(--primary)]"
             />
           </label>

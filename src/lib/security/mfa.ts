@@ -6,7 +6,10 @@ const TOTP_WINDOW_STEPS = 1;
 const MFA_ISSUER = "DropControl";
 const MFA_SECRET_BYTES = 20;
 const MFA_PENDING_COOKIE = "dropcontrol_mfa_setup";
+const MFA_RECOVERY_CODES_COOKIE = "dropcontrol_mfa_recovery_codes";
 const MFA_VERIFICATION_COOKIE = "dropcontrol_mfa_verified";
+const MFA_RECOVERY_CODE_COUNT = 8;
+const MFA_RECOVERY_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 type PendingMfaSetup = {
   createdAt: number;
@@ -17,6 +20,12 @@ type PendingMfaSetup = {
 type VerifiedMfaSession = {
   userId: string;
   verifiedAt: number;
+};
+
+type RecoveryCodesPayload = {
+  codes: string[];
+  createdAt: number;
+  userId: string;
 };
 
 const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -196,6 +205,63 @@ export function verifyTotpCode(input: { secret: string; code: string }) {
   return false;
 }
 
+export function normalizeRecoveryCode(value: string | null | undefined) {
+  return value?.replace(/\s+/g, "").replace(/-/g, "").trim().toUpperCase() ?? "";
+}
+
+function formatRecoveryCode(value: string) {
+  return `${value.slice(0, 5)}-${value.slice(5)}`;
+}
+
+export function generateRecoveryCodes(count = MFA_RECOVERY_CODE_COUNT) {
+  return Array.from({ length: count }, () => {
+    const rawCode = Array.from({ length: 10 }, () => {
+      const index = crypto.randomInt(0, MFA_RECOVERY_CODE_ALPHABET.length);
+      return MFA_RECOVERY_CODE_ALPHABET[index];
+    }).join("");
+
+    return formatRecoveryCode(rawCode);
+  });
+}
+
+export function hashRecoveryCode(value: string) {
+  return crypto
+    .createHash("sha256")
+    .update(`${getAuthSecret()}:mfa-recovery:${normalizeRecoveryCode(value)}`)
+    .digest("base64url");
+}
+
+export function hashRecoveryCodes(codes: string[]) {
+  return codes.map((code) => hashRecoveryCode(code));
+}
+
+export function getRecoveryCodeCount(value: unknown) {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string").length : 0;
+}
+
+export function consumeRecoveryCode(
+  storedCodes: unknown,
+  submittedCode: string,
+) {
+  if (!Array.isArray(storedCodes)) {
+    return {
+      matched: false,
+      nextCodes: null,
+    };
+  }
+
+  const normalizedHashes = storedCodes.filter(
+    (item): item is string => typeof item === "string" && item.length > 0,
+  );
+  const submittedHash = hashRecoveryCode(submittedCode);
+  const nextCodes = normalizedHashes.filter((hash) => hash !== submittedHash);
+
+  return {
+    matched: nextCodes.length !== normalizedHashes.length,
+    nextCodes,
+  };
+}
+
 export function encryptMfaSecret(secret: string) {
   return encryptText(secret);
 }
@@ -223,6 +289,10 @@ export function getMfaSetupCookieName() {
   return MFA_PENDING_COOKIE;
 }
 
+export function getMfaRecoveryCodesCookieName() {
+  return MFA_RECOVERY_CODES_COOKIE;
+}
+
 export function getMfaVerificationCookieName() {
   return MFA_VERIFICATION_COOKIE;
 }
@@ -248,6 +318,10 @@ export function buildVerifiedMfaSessionValue(payload: VerifiedMfaSession) {
   return serializePayload(payload);
 }
 
+export function buildRecoveryCodesDisplayValue(payload: RecoveryCodesPayload) {
+  return serializePayload(payload);
+}
+
 export function readVerifiedMfaSessionValue(
   rawValue: string | undefined,
   userId: string,
@@ -255,6 +329,19 @@ export function readVerifiedMfaSessionValue(
   const payload = deserializePayload<VerifiedMfaSession>(rawValue);
 
   if (!payload || payload.userId !== userId) {
+    return null;
+  }
+
+  return payload;
+}
+
+export function readRecoveryCodesDisplayValue(
+  rawValue: string | undefined,
+  userId: string,
+) {
+  const payload = deserializePayload<RecoveryCodesPayload>(rawValue);
+
+  if (!payload || payload.userId !== userId || !Array.isArray(payload.codes)) {
     return null;
   }
 
@@ -281,5 +368,12 @@ export function getPendingMfaSetupCookieOptions() {
   return {
     ...cookieBaseOptions(),
     maxAge: 60 * 15,
+  };
+}
+
+export function getRecoveryCodesCookieOptions() {
+  return {
+    ...cookieBaseOptions(),
+    maxAge: 60 * 20,
   };
 }
