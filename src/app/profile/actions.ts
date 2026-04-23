@@ -1,23 +1,16 @@
 "use server";
 
-import { randomUUID } from "crypto";
-import { mkdir, unlink, writeFile } from "fs/promises";
-import path from "path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/require-user";
 import { getUserById, updateUserProfile } from "@/lib/data/users";
+import {
+  deleteStoredProfileImage,
+  isStoredProfileImage,
+  storeProfileImage,
+} from "@/lib/profile-images";
 import { recordAuditLog } from "@/lib/security/audit";
 import { profileSchema } from "@/lib/validations/auth";
-
-const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024;
-const PROFILE_IMAGE_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "profile");
-const PROFILE_IMAGE_PUBLIC_PATH = "/uploads/profile";
-const allowedImageExtensions = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-} as const;
 
 function profileRedirect(params: Record<string, string | undefined>): never {
   const search = new URLSearchParams();
@@ -40,62 +33,6 @@ function getUploadedFile(value: FormDataEntryValue | null) {
   return value;
 }
 
-function isStoredProfileImage(image?: string | null): image is string {
-  return image?.startsWith(`${PROFILE_IMAGE_PUBLIC_PATH}/`) ?? false;
-}
-
-async function deleteStoredProfileImage(image?: string | null) {
-  if (!isStoredProfileImage(image)) {
-    return;
-  }
-
-  const targetPath = path.join(PROFILE_IMAGE_UPLOAD_DIR, path.basename(image));
-  const uploadDir = path.resolve(PROFILE_IMAGE_UPLOAD_DIR);
-  const resolvedTarget = path.resolve(targetPath);
-
-  if (resolvedTarget === uploadDir || !resolvedTarget.startsWith(`${uploadDir}${path.sep}`)) {
-    return;
-  }
-
-  try {
-    await unlink(resolvedTarget);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-      throw error;
-    }
-  }
-}
-
-async function storeProfileImage(file: File, userId: string) {
-  const extension =
-    file.type in allowedImageExtensions
-      ? allowedImageExtensions[file.type as keyof typeof allowedImageExtensions]
-      : null;
-
-  if (!extension) {
-    profileRedirect({
-      error: "Envie uma foto em JPG, PNG ou WebP.",
-    });
-  }
-
-  if (file.size > MAX_PROFILE_IMAGE_SIZE) {
-    profileRedirect({
-      error: "A foto precisa ter ate 5 MB.",
-    });
-  }
-
-  await mkdir(PROFILE_IMAGE_UPLOAD_DIR, { recursive: true });
-
-  const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "") || "user";
-  const fileName = `${safeUserId}-${randomUUID()}.${extension}`;
-  const filePath = path.join(PROFILE_IMAGE_UPLOAD_DIR, fileName);
-  const bytes = Buffer.from(await file.arrayBuffer());
-
-  await writeFile(filePath, bytes);
-
-  return `${PROFILE_IMAGE_PUBLIC_PATH}/${fileName}`;
-}
-
 export async function saveProfile(formData: FormData) {
   const user = await requireUser();
   const parsed = profileSchema.safeParse({
@@ -114,10 +51,20 @@ export async function saveProfile(formData: FormData) {
   const uploadedImage = getUploadedFile(formData.get("image"));
   const removeImage = formData.get("removeImage") === "on";
   const currentUser = await getUserById(user.id);
+  const storedImage = uploadedImage
+    ? await storeProfileImage(uploadedImage, user.id)
+    : null;
+
+  if (storedImage?.error) {
+    profileRedirect({
+      error: storedImage.error,
+    });
+  }
+
   const image = removeImage
     ? null
     : uploadedImage
-      ? await storeProfileImage(uploadedImage, user.id)
+      ? storedImage?.image
       : undefined;
 
   await updateUserProfile(user.id, {

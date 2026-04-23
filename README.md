@@ -46,6 +46,8 @@ Sistema operacional para dropshipping com autenticacao, cadastros, pedidos, tare
 - [Wireframes do MVP](./docs/mvp-wireframes.md)
 - [Backlog por fases](./docs/mvp-backlog.md)
 - [Banco local com Docker](./docs/docker-db.md)
+- [Cloud SQL para PostgreSQL](./docs/cloud-sql.md)
+- [Deploy no Cloud Run](./docs/cloud-run.md)
 - [Seguranca de rede](./docs/security-network.md)
 - [Roadmap de seguranca](./docs/security-roadmap.md)
 - [Schema Prisma](./prisma/schema.prisma)
@@ -106,7 +108,9 @@ npm run db:up
 npm run db:down
 npm run db:status
 npm run db:logs
+npm run db:check
 npm run db:migrate
+npm run db:migrate:deploy
 npm run db:studio
 ```
 

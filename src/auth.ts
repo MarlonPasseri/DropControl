@@ -57,6 +57,8 @@ async function resolveGoogleUser(input: {
 }
 
 const baseCallbacks = authConfig.callbacks ?? {};
+const googleProvider =
+  process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? [Google({})] : [];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -102,7 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   providers: [
-    Google({}),
+    ...googleProvider,
     Credentials({
       credentials: {
         email: {},

@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "sales_channel_product_links_connection_id_external_product_id_e" RENAME TO "sales_channel_product_links_connection_id_external_product__key";
