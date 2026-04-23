@@ -133,11 +133,15 @@ function Upsert-MigrationJob {
 }
 
 $GcloudCommand = "gcloud"
-$localGcloud = Join-Path $env:LOCALAPPDATA "Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
+$localGcloud = if ($env:LOCALAPPDATA) {
+  Join-Path $env:LOCALAPPDATA "Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
+} else {
+  ""
+}
 
 if (Get-Command $GcloudCommand -ErrorAction SilentlyContinue) {
   $GcloudCommand = (Get-Command $GcloudCommand).Source
-} elseif (Test-Path $localGcloud) {
+} elseif ($localGcloud -and (Test-Path $localGcloud)) {
   $GcloudCommand = $localGcloud
 } else {
   Assert-Command "gcloud"
