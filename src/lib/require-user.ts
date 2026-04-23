@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getUserById } from "@/lib/data/users";
+import { hasVerifiedMfaCookie, isMfaRequired } from "@/lib/security/mfa";
 import { resolveAppRoleForUser, type AppRole } from "@/lib/security/roles";
 
 type RequiredUser = {
@@ -16,6 +18,10 @@ export async function requireUser(): Promise<RequiredUser> {
 
   if (!session?.user?.id) {
     redirect("/login");
+  }
+
+  if (isMfaRequired(session.user) && !hasVerifiedMfaCookie(await cookies(), session.user.id)) {
+    redirect("/login/mfa");
   }
 
   return session.user;

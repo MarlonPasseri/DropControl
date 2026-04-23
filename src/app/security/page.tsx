@@ -1,10 +1,26 @@
-import { updateUserAccess } from "@/app/security/actions";
+import { cookies } from "next/headers";
+import {
+  beginMfaSetup,
+  cancelMfaSetup,
+  confirmMfaSetup,
+  disableMfa,
+  updateUserAccess,
+} from "@/app/security/actions";
 import { AppShell } from "@/components/app-shell";
 import { AppPanel, EmptyHint, MetricCard, NoticeBanner } from "@/components/mvp-ui";
-import { countUsersByAccessRole, listUsersWithAccessRoles } from "@/lib/data/users";
+import {
+  countUsersByAccessRole,
+  getUserSecurityById,
+  listUsersWithAccessRoles,
+} from "@/lib/data/users";
 import { getSecurityOverview } from "@/lib/data/security";
 import { formatDateTime } from "@/lib/formatters";
 import { requireAdminUser } from "@/lib/require-user";
+import {
+  getMfaSetupCookieName,
+  getOtpAuthUri,
+  readPendingMfaSetupValue,
+} from "@/lib/security/mfa";
 import { APP_ROLES, getRoleLabel } from "@/lib/security/roles";
 
 type PageProps = {
@@ -58,6 +74,21 @@ export default async function SecurityPage({ searchParams }: PageProps) {
     listUsersWithAccessRoles(),
     countUsersByAccessRole(),
   ]);
+  const [securityUser, cookieStore] = await Promise.all([
+    getUserSecurityById(user.id),
+    cookies(),
+  ]);
+  const pendingMfaSetup = readPendingMfaSetupValue(
+    cookieStore.get(getMfaSetupCookieName())?.value,
+    user.id,
+  );
+  const otpAuthUri =
+    pendingMfaSetup && user.email
+      ? getOtpAuthUri({
+          email: user.email,
+          secret: pendingMfaSetup.secret,
+        })
+      : null;
 
   return (
     <AppShell
@@ -101,6 +132,156 @@ export default async function SecurityPage({ searchParams }: PageProps) {
       {errorMessage ? <NoticeBanner tone="error" text={errorMessage} /> : null}
 
       <section className="grid gap-6">
+        <AppPanel title="MFA administrativa" eyebrow="Segundo fator da sua conta">
+          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="space-y-4 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] p-4">
+              <div>
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">Status</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">
+                  {securityUser?.mfaEnabled ? "Ativo" : "Desativado"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-[var(--on-surface-variant)]">
+                  Ultima configuracao
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {securityUser?.mfaEnrolledAt
+                    ? formatDateTime(securityUser.mfaEnrolledAt)
+                    : "Ainda nao configurado"}
+                </p>
+              </div>
+
+              <div className="text-sm leading-6 text-[var(--on-surface-variant)]">
+                Contas administrativas passam a pedir um codigo do autenticador depois do login.
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {securityUser?.mfaEnabled ? (
+                <div className="space-y-4 rounded-lg border border-[var(--outline-variant)] bg-white p-4">
+                  <p className="text-sm leading-6 text-[var(--on-surface-variant)]">
+                    MFA ja esta ativa nesta conta. Para desativar, confirme um codigo valido do
+                    autenticador.
+                  </p>
+
+                  <form action={disableMfa} className="space-y-4">
+                    <label className="block">
+                      <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                        Codigo atual
+                      </span>
+                      <input
+                        type="text"
+                        name="code"
+                        required
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={12}
+                        placeholder="000000"
+                        className="w-full rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.2em] text-slate-900 outline-none transition focus:border-[var(--primary)]"
+                      />
+                    </label>
+
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-[var(--error)] hover:text-[var(--error)]"
+                    >
+                      Desativar MFA
+                    </button>
+                  </form>
+                </div>
+              ) : pendingMfaSetup ? (
+                <div className="space-y-4 rounded-lg border border-[var(--outline-variant)] bg-white p-4">
+                  <p className="text-sm leading-6 text-[var(--on-surface-variant)]">
+                    Cadastre a chave abaixo no seu app autenticador e confirme um codigo para
+                    concluir a ativacao.
+                  </p>
+
+                  <div className="grid gap-4">
+                    <label className="block">
+                      <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                        Chave secreta
+                      </span>
+                      <input
+                        type="text"
+                        readOnly
+                        value={pendingMfaSetup.secret}
+                        className="w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-sm font-semibold text-slate-900"
+                      />
+                    </label>
+
+                    {otpAuthUri ? (
+                      <label className="block">
+                        <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                          URI do autenticador
+                        </span>
+                        <textarea
+                          readOnly
+                          value={otpAuthUri}
+                          className="min-h-[88px] w-full rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-sm text-slate-900"
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+
+                  <form action={confirmMfaSetup} className="space-y-4">
+                    <label className="block">
+                      <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--on-surface-variant)]">
+                        Primeiro codigo
+                      </span>
+                      <input
+                        type="text"
+                        name="code"
+                        required
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={12}
+                        placeholder="000000"
+                        className="w-full rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.2em] text-slate-900 outline-none transition focus:border-[var(--primary)]"
+                      />
+                    </label>
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] transition hover:bg-[var(--primary-dim)]"
+                      >
+                        Confirmar e ativar
+                      </button>
+                    </div>
+                  </form>
+
+                  <form action={cancelMfaSetup}>
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-[var(--outline-variant)] bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+                    >
+                      Cancelar configuracao
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-4 rounded-lg border border-[var(--outline-variant)] bg-white p-4">
+                  <p className="text-sm leading-6 text-[var(--on-surface-variant)]">
+                    Gere uma chave TOTP para conectar esta conta a Google Authenticator, 1Password,
+                    Microsoft Authenticator ou app equivalente.
+                  </p>
+
+                  <form action={beginMfaSetup}>
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] transition hover:bg-[var(--primary-dim)]"
+                    >
+                      Gerar configuracao MFA
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        </AppPanel>
+
         <AppPanel title="Controle de acesso" eyebrow="Usuarios e papeis">
           {users.length === 0 ? (
             <EmptyHint text="Nenhum usuario encontrado para administrar." />

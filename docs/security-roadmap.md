@@ -52,10 +52,15 @@ Esta aplicacao agora tem uma base melhor de seguranca de rede e borda, mas dados
   - o nivel de acesso deixou de ser editavel no perfil;
   - administradores podem promover ou reduzir usuarios direto em `/security`;
   - a interface impede remover o proprio acesso administrativo ou deixar o ambiente sem admin.
+- MFA administrativa:
+  - contas `ADMIN` podem ativar TOTP direto em `/security`;
+  - depois do login, administradores com MFA ativa passam por `/login/mfa`;
+  - a validacao do segundo fator e exigida antes de abrir o painel;
+  - a chave MFA fica armazenada criptografada no banco.
 
 ## Proximo incremento recomendado no codigo
 
-1. Adicionar MFA, priorizando administradores.
+1. Adicionar codigos de recuperacao e fluxo de reset de MFA.
 2. Adicionar testes automatizados para autorizacao e isolamento por usuario.
 3. Adicionar revisao e revogacao de sessoes ativas.
 4. Separar permissoes finas por modulo quando houver mais de um perfil operacional.

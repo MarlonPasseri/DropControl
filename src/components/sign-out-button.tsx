@@ -1,10 +1,18 @@
+import { cookies } from "next/headers";
 import { signOut } from "@/auth";
+import {
+  getMfaSetupCookieName,
+  getMfaVerificationCookieName,
+} from "@/lib/security/mfa";
 
 export function SignOutButton() {
   return (
     <form
       action={async () => {
         "use server";
+        const cookieStore = await cookies();
+        cookieStore.delete(getMfaVerificationCookieName());
+        cookieStore.delete(getMfaSetupCookieName());
         await signOut({ redirectTo: "/login" });
       }}
     >

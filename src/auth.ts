@@ -86,6 +86,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       user.email = dbUser.email;
       user.image = dbUser.image;
       user.role = appRole;
+      user.mfaEnabled = dbUser.mfaEnabled;
 
       return true;
     },
@@ -100,6 +101,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           params.token.email = dbUser.email;
           params.token.picture = dbUser.image ?? params.token.picture;
           params.token.role = appRole;
+          params.token.mfaEnabled = dbUser.mfaEnabled;
 
           return params.token;
         }
@@ -197,6 +199,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           role: await resolveAppRoleForUser(user),
+          mfaEnabled: user.mfaEnabled,
         };
       },
     }),

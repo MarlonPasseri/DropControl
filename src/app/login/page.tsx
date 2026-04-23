@@ -1,8 +1,10 @@
 import Image from "next/image";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LoginForm } from "@/app/login/login-form";
 import { RegisterForm } from "@/app/login/register-form";
+import { hasVerifiedMfaCookie, isMfaRequired } from "@/lib/security/mfa";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -11,7 +13,12 @@ export default async function LoginPage() {
   );
 
   if (session?.user) {
-    redirect("/dashboard");
+    const requiresMfa = isMfaRequired(session.user);
+    const mfaVerified = requiresMfa
+      ? hasVerifiedMfaCookie(await cookies(), session.user.id)
+      : true;
+
+    redirect(requiresMfa && !mfaVerified ? "/login/mfa" : "/dashboard");
   }
 
   return (

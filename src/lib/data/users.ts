@@ -21,6 +21,23 @@ export async function getUserCount() {
   return prisma.user.count();
 }
 
+export async function getUserSecurityById(id: string) {
+  return prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      mfaEnabled: true,
+      mfaSecretCiphertext: true,
+      mfaEnrolledAt: true,
+    },
+  });
+}
+
 export async function listUsersWithAccessRoles() {
   const [users, firstRegisteredUser] = await prisma.$transaction([
     prisma.user.findMany({
@@ -118,6 +135,26 @@ export async function updateUserAccessRole(id: string, role: AppRole) {
     },
     data: {
       role,
+    },
+  });
+}
+
+export async function updateUserMfaSettings(
+  id: string,
+  input: {
+    mfaEnabled: boolean;
+    mfaSecretCiphertext?: string | null;
+    mfaEnrolledAt?: Date | null;
+  },
+) {
+  return prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      mfaEnabled: input.mfaEnabled,
+      mfaSecretCiphertext: input.mfaSecretCiphertext ?? null,
+      mfaEnrolledAt: input.mfaEnrolledAt ?? null,
     },
   });
 }

@@ -7,6 +7,7 @@ declare module "next-auth" {
     user: {
       id: string;
       role: SessionRole;
+      mfaEnabled: boolean;
     } & DefaultSession["user"];
   }
 
@@ -16,6 +17,7 @@ declare module "next-auth" {
     email: string;
     image?: string | null;
     role: SessionRole;
+    mfaEnabled: boolean;
   }
 }
 
@@ -23,5 +25,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     sub?: string;
     role?: SessionRole;
+    mfaEnabled?: boolean;
   }
 }
