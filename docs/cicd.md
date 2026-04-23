@@ -5,7 +5,7 @@ O deploy automatico usa GitHub Actions com Workload Identity Federation, sem cha
 ## Fluxo
 
 - Pull request para `main`: roda `npm ci`, `npm run lint` e `npm run build`.
-- Push em `main`: roda checks e, se `ENABLE_CLOUD_RUN_DEPLOY=true`, faz deploy no Cloud Run.
+- Push em `main`: roda checks e faz deploy no Cloud Run.
 - Deploy: Cloud Build cria imagens `runner` e `migrator`, o Cloud Run Job roda migrations, e o servico recebe a nova revisao.
 
 ## Google Cloud configurado
@@ -41,12 +41,6 @@ Em `GitHub > Repository > Settings > Secrets and variables > Actions`, crie este
 ```txt
 GCP_WORKLOAD_IDENTITY_PROVIDER=projects/490152629905/locations/global/workloadIdentityPools/github-actions/providers/dropcontrol
 GCP_SERVICE_ACCOUNT=github-actions-deployer@dropcontrol-494022.iam.gserviceaccount.com
-```
-
-Crie esta variable para ligar o deploy automatico:
-
-```txt
-ENABLE_CLOUD_RUN_DEPLOY=true
 ```
 
 As demais variables sao opcionais porque o workflow ja tem os valores atuais como padrao:
