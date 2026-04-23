@@ -81,23 +81,23 @@ jobs:
         env:
           SKIP_MIGRATIONS: ${{ github.event.inputs.skip_migrations || 'false' }}
         run: |
-          $deployArgs = @(
-            "-ProjectId", $env:GCP_PROJECT_ID,
-            "-Region", $env:GCP_REGION,
-            "-ServiceName", $env:CLOUD_RUN_SERVICE,
-            "-CloudSqlInstance", $env:CLOUD_SQL_INSTANCE,
-            "-ProfileImageBucket", $env:PROFILE_IMAGE_BUCKET,
-            "-AppUrl", $env:APP_URL,
-            "-EnableGoogleOAuth",
-            "-AllowUnauthenticated"
-          )
+          $extraArgs = @()
 
           if ($env:ENABLE_TIKTOK_SHOP -eq "true") {
-            $deployArgs += "-EnableTikTokShop"
+            $extraArgs += "-EnableTikTokShop"
           }
 
           if ($env:SKIP_MIGRATIONS -eq "true") {
-            $deployArgs += "-SkipMigrations"
+            $extraArgs += "-SkipMigrations"
           }
 
-          ./deploy/cloud-run/deploy.ps1 @deployArgs
+          ./deploy/cloud-run/deploy.ps1 `
+            -ProjectId $env:GCP_PROJECT_ID `
+            -Region $env:GCP_REGION `
+            -ServiceName $env:CLOUD_RUN_SERVICE `
+            -CloudSqlInstance $env:CLOUD_SQL_INSTANCE `
+            -ProfileImageBucket $env:PROFILE_IMAGE_BUCKET `
+            -AppUrl $env:APP_URL `
+            -EnableGoogleOAuth `
+            -AllowUnauthenticated `
+            @extraArgs
